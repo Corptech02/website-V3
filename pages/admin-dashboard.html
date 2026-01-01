@@ -1875,11 +1875,11 @@
                         await window.loadPoliciesFromServer();
                         console.log('✅ Server policies reloaded');
 
-                        // Method 1: Direct policy loading function
-                        if (typeof loadPolicies === 'function') {
-                            console.log('🔄 Calling loadPolicies()');
-                            setTimeout(() => loadPolicies(), 100);
-                        }
+                        // Method 1: Direct policy loading function - DISABLED TO PREVENT CONFLICTS
+                        // if (typeof loadPolicies === 'function') {
+                        //     console.log('🔄 Calling loadPolicies()');
+                        //     setTimeout(() => loadPolicies(), 100);
+                        // }
 
                         // Method 2: PolicyDB refresh if available
                         if (window.policyDB && typeof window.policyDB.refreshDisplay === 'function') {
@@ -1903,14 +1903,14 @@
                             }
                         }
 
-                        // Method 5: Direct DOM refresh if we can find the container
-                        setTimeout(() => {
-                            const policiesContainer = document.querySelector('.policies-grid, #policiesContainer, [id*="policies"]');
-                            if (policiesContainer && typeof loadPolicies === 'function') {
-                                console.log('🔄 Final attempt - direct container refresh');
-                                loadPolicies();
-                            }
-                        }, 500);
+                        // Method 5: Direct DOM refresh - DISABLED TO PREVENT CONFLICTS
+                        // setTimeout(() => {
+                        //     const policiesContainer = document.querySelector('.policies-grid, #policiesContainer, [id*="policies"]');
+                        //     if (policiesContainer && typeof loadPolicies === 'function') {
+                        //         console.log('🔄 Final attempt - direct container refresh');
+                        //         loadPolicies();
+                        //     }
+                        // }, 500);
 
                     } catch (refreshError) {
                         console.error('Error during refresh:', refreshError);
@@ -1944,10 +1944,10 @@
             window.loadPoliciesFromServer().then(() => {
                 console.log('✅ Server policies loaded and ready');
 
-                // Try to refresh the policy display if we're on the policies view
-                if (typeof loadPolicies === 'function') {
-                    setTimeout(() => loadPolicies(), 500);
-                }
+                // Try to refresh the policy display - DISABLED TO PREVENT CONFLICTS
+                // if (typeof loadPolicies === 'function') {
+                //     setTimeout(() => loadPolicies(), 500);
+                // }
             }).catch(error => {
                 console.error('❌ Failed to auto-load policies:', error);
             });
@@ -2347,15 +2347,15 @@
             }
         };
 
-        // DIRECT POLICY LOADING - PROPERLY PLACED OUTSIDE CONTAINER
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                console.log('🚀 DIRECT: Loading policies directly - checking for issues...');
-                const container = document.getElementById('allPoliciesContainer');
-                console.log('🚀 DIRECT: Container found:', !!container);
-                console.log('🚀 DIRECT: PolicyDB available:', !!window.policyDB);
+        // DISABLED DIRECT POLICY LOADING - CAUSES CONFLICT WITH MAIN SYSTEM
+        // document.addEventListener('DOMContentLoaded', function() {
+        //     setTimeout(() => {
+        //         console.log('🚀 DIRECT: Loading policies directly - checking for issues...');
+        //         const container = document.getElementById('allPoliciesContainer');
+        //         console.log('🚀 DIRECT: Container found:', !!container);
+        //         console.log('🚀 DIRECT: PolicyDB available:', !!window.policyDB);
 
-                if (window.policyDB) {
+        /*        if (window.policyDB) {
                     console.log('🔍 DEBUG: window.policyDB exists:', !!window.policyDB);
                     console.log('🔍 DEBUG: getAllPolicies method exists:', typeof window.policyDB.getAllPolicies);
 
@@ -2600,15 +2600,38 @@
                         coiGenerationInProgress = true;
                         lastCOIGeneration = now;
 
+                        console.log('🔄 window.generateCOI called with:', policyId, policyNumber);
+                        console.log('🔍 window.allPolicies count:', window.allPolicies?.length || 0);
+
                         console.log('🔄 Opening COI generator for policy:', policyNumber);
 
                         try {
-                            const policy = window.allPolicies?.find(p => p.id === policyId);
+                            // Enhanced policy lookup with multiple search strategies
+                            let policy = window.allPolicies?.find(p => p.id === policyId);
+
                             if (!policy) {
-                                console.error('❌ Policy not found! Looking for ID:', policyId);
+                                // Try finding by policy_number if ID lookup fails
+                                policy = window.allPolicies?.find(p =>
+                                    p.policy_number === policyId ||
+                                    p.policyNumber === policyId ||
+                                    p.id === policyNumber
+                                );
+                            }
+
+                            if (!policy) {
+                                console.error('❌ Policy not found! Searched for ID:', policyId, 'Number:', policyNumber);
+                                console.error('Available policies:', window.allPolicies?.map(p => ({id: p.id, policy_number: p.policy_number, policyNumber: p.policyNumber})));
                                 alert('Policy not found!');
                                 return;
                             }
+
+                            console.log('✅ Found policy for COI:', {
+                                id: policy.id,
+                                policy_number: policy.policy_number,
+                                policyNumber: policy.policyNumber,
+                                insured_name: policy.insured_name,
+                                clientName: policy.clientName
+                            });
 
                             // Clear any existing COI modal first
                             const existingModal = document.getElementById('coiModal');
@@ -2770,7 +2793,8 @@
                     container.innerHTML = '<div style="background: red; color: white; padding: 20px;"><h2>ERROR: Policy database not loaded</h2></div>';
                 }
             }, 3000); // Increased timeout to wait for all functions to load
-        });
+        */
+        // });
 
         // Helper function removed - using the comprehensive version defined earlier
 
@@ -4838,7 +4862,27 @@ contact@vigagency.com`;
                 policies = [];
             }
 
-            console.log('🔄 DEBUG: displayAllPolicies called with', policies.length, 'policies');
+            // Filter out invalid policies before display
+            const validPolicies = policies.filter(policy => {
+                const isValid = policy &&
+                    typeof policy === 'object' &&
+                    policy.id &&
+                    policy.id !== 'undefined' &&
+                    policy.id !== '' &&
+                    policy.id !== null;
+
+                if (!isValid) {
+                    console.warn('🗑️ Filtering out invalid policy:', {
+                        id: policy?.id,
+                        policy_number: policy?.policy_number,
+                        insured_name: policy?.insured_name
+                    });
+                }
+
+                return isValid;
+            });
+
+            console.log('🔄 DEBUG: displayAllPolicies called with', policies.length, 'policies, showing', validPolicies.length, 'valid policies');
             const container = document.getElementById('allPoliciesContainer');
             console.log('🔄 DEBUG: Container found:', !!container);
 
@@ -4862,7 +4906,7 @@ contact@vigagency.com`;
             }
 
             // ENHANCED DEBUG: List all policy IDs and names for identification
-            console.log('🚨 ALL POLICIES SUMMARY:', policies.map(p => ({
+            console.log('🚨 ALL POLICIES SUMMARY:', validPolicies.map(p => ({
                 id: p.id,
                 policy_number: p.policy_number,
                 policyNumber: p.policyNumber,
@@ -4872,7 +4916,7 @@ contact@vigagency.com`;
                 client_email: p.client_email
             })));
 
-            policies.forEach(policy => {
+            validPolicies.forEach(policy => {
                 const policyCard = document.createElement('div');
                 policyCard.className = 'policy-card';
 
@@ -5824,19 +5868,44 @@ contact@vigagency.com`;
         };
 
         function generateCOI(policyId, policyNumber) {
-            console.log('🔄 Opening COI generator for policy:', policyNumber);
+            console.log('🔄 LOCAL generateCOI called for policy:', policyNumber);
+            console.log('🔍 This should NOT be called from button clicks!');
 
-            // Find the policy in our data
-            const policy = allPolicies.find(p => p.id === policyId);
+            // Ensure we have access to policies
+            const policiesArray = window.allPolicies || allPolicies || [];
+            console.log('🔍 Available policies count:', policiesArray.length);
+
+            // Find the policy in our data with enhanced lookup
+            let policy = policiesArray.find(p => p.id === policyId);
+
             if (!policy) {
+                // Try finding by policy_number variations
+                policy = policiesArray.find(p =>
+                    p.policy_number === policyId ||
+                    p.policyNumber === policyId ||
+                    p.id === policyNumber
+                );
+            }
+
+            if (!policy) {
+                console.error('❌ Policy not found! Searched for ID:', policyId, 'Number:', policyNumber);
+                console.error('Available policies:', policiesArray?.map(p => ({id: p.id, policy_number: p.policy_number, policyNumber: p.policyNumber})));
                 alert('Policy not found!');
                 return;
             }
 
+            console.log('✅ Found policy for COI generation:', {
+                id: policy.id,
+                policy_number: policy.policy_number,
+                policyNumber: policy.policyNumber,
+                insured_name: policy.insured_name,
+                clientName: policy.clientName
+            });
+
             // Show the COI generation modal
             showCOIModal(policy);
         }
-        window.generateCOI = generateCOI;
+        // window.generateCOI = generateCOI; // REMOVED - This was overriding the better window.generateCOI function defined earlier
 
         // editPolicy function now defined in the main event delegation section
         // window.editPolicy is defined earlier to handle modal population properly
@@ -5858,6 +5927,8 @@ contact@vigagency.com`;
         window.viewClient = viewClient;
 
         async function deletePolicy(policyId, policyNumber) {
+            console.log('🗑️ Starting deletion process for policy:', policyId, policyNumber);
+
             const policy = allPolicies.find(p => p.id === policyId);
             const hasPhone = policy && policy.client_phone && policy.client_phone.trim() !== '';
 
@@ -5867,20 +5938,51 @@ contact@vigagency.com`;
             }
 
             if (confirm(confirmMessage)) {
-                // Delete from database permanently
-                await window.policyDB.deletePolicy(policyId);
+                try {
+                    console.log('🗑️ User confirmed deletion, calling deletePolicy API...');
 
-                // Refresh data and display
-                window.allPolicies = await window.policyDB.getAllPolicies();
-                window.applyFilters();
-                window.updateAdminStats();
+                    // Delete from database permanently
+                    const deleteResult = await window.policyDB.deletePolicy(policyId);
+                    console.log('🗑️ Delete API result:', deleteResult);
 
-                let successMessage = `Policy ${policyNumber} has been deleted.`;
-                if (hasPhone) {
-                    successMessage += `\n\n🔐 Client login access for "${policy.insured_name}" has been removed.`;
+                    if (deleteResult) {
+                        console.log('✅ Policy deleted successfully from server');
+
+                        // Refresh data and display
+                        console.log('🔄 Refreshing policy data...');
+                        const rawPolicies = await window.policyDB.getAllPolicies();
+
+                        // Filter out invalid policies from global state
+                        window.allPolicies = rawPolicies.filter(policy => {
+                            return policy &&
+                                typeof policy === 'object' &&
+                                policy.id &&
+                                policy.id !== 'undefined' &&
+                                policy.id !== '' &&
+                                policy.id !== null;
+                        });
+
+                        console.log('🔄 Updated policy count:', window.allPolicies.length, '(filtered from', rawPolicies.length, ')');
+
+                        window.applyFilters();
+                        window.updateAdminStats();
+
+                        let successMessage = `Policy ${policyNumber} has been deleted.`;
+                        if (hasPhone) {
+                            successMessage += `\n\n🔐 Client login access for "${policy.insured_name}" has been removed.`;
+                        }
+
+                        alert(successMessage);
+                    } else {
+                        console.error('❌ Failed to delete policy from server');
+                        alert('Error: Failed to delete policy from server. Please check server logs and try again.');
+                    }
+                } catch (error) {
+                    console.error('❌ Error during policy deletion:', error);
+                    alert('Error during deletion: ' + error.message);
                 }
-
-                alert(successMessage);
+            } else {
+                console.log('🚫 User cancelled deletion');
             }
         }
         window.deletePolicy = deletePolicy;
