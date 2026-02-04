@@ -1270,23 +1270,26 @@ async function loadSavedData(policyId) {
     }
 }
 
-// Show success message
+// Show success message - DISABLED
 function showSuccessMessage(message) {
-    const div = document.createElement('div');
-    div.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #10b981;
-        color: white;
-        padding: 15px 25px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-    `;
-    div.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-    document.body.appendChild(div);
-    setTimeout(() => div.remove(), 3000);
+    // const div = document.createElement('div');
+    // div.style.cssText = `
+    //     position: fixed;
+    //     top: 20px;
+    //     right: 20px;
+    //     background: #10b981;
+    //     color: white;
+    //     padding: 15px 25px;
+    //     border-radius: 8px;
+    //     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    //     z-index: 10000;
+    // `;
+    // div.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+    // document.body.appendChild(div);
+    // setTimeout(() => div.remove(), 3000);
+
+    // Just log the message instead of showing popup
+    console.log('Success:', message);
 }
 
 // Update certificate holder information functions

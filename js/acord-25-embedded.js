@@ -172,12 +172,12 @@ window.fillACORDForm = function(policyId) {
         pdfContainer.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // Show a subtle success message
-    const successDiv = document.createElement('div');
-    successDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10000;';
-    successDiv.innerHTML = '<i class="fas fa-check-circle"></i> Grant Corp is prefilled as Authorized Representative';
-    document.body.appendChild(successDiv);
-    setTimeout(() => successDiv.remove(), 3000);
+    // Show a subtle success message - DISABLED
+    // const successDiv = document.createElement('div');
+    // successDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10000;';
+    // successDiv.innerHTML = '<i class="fas fa-check-circle"></i> Grant Corp is prefilled as Authorized Representative';
+    // document.body.appendChild(successDiv);
+    // setTimeout(() => successDiv.remove(), 3000);
 };
 
 // Function to download the ACORD PDF
@@ -466,31 +466,31 @@ window.selectAndUploadCOI = function(policyId, modal) {
                 // Remove modal
                 if (modal) modal.remove();
 
-                // Show success message
-                const successDiv = document.createElement('div');
-                successDiv.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #10b981;
-                    color: white;
-                    padding: 15px 25px;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    z-index: 10000;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                `;
-                successDiv.innerHTML = `
-                    <i class="fas fa-check-circle" style="font-size: 20px;"></i>
-                    <div>
-                        <strong>COI Saved Successfully!</strong><br>
-                        <small>Your filled ACORD form has been saved to the server</small>
-                    </div>
-                `;
-                document.body.appendChild(successDiv);
-                setTimeout(() => successDiv.remove(), 4000);
+                // Show success message - DISABLED
+                // const successDiv = document.createElement('div');
+                // successDiv.style.cssText = `
+                //     position: fixed;
+                //     top: 20px;
+                //     right: 20px;
+                //     background: #10b981;
+                //     color: white;
+                //     padding: 15px 25px;
+                //     border-radius: 8px;
+                //     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                //     z-index: 10000;
+                //     display: flex;
+                //     align-items: center;
+                //     gap: 10px;
+                // `;
+                // successDiv.innerHTML = `
+                //     <i class="fas fa-check-circle" style="font-size: 20px;"></i>
+                //     <div>
+                //         <strong>COI Saved Successfully!</strong><br>
+                //         <small>Your filled ACORD form has been saved to the server</small>
+                //     </div>
+                // `;
+                // document.body.appendChild(successDiv);
+                // setTimeout(() => successDiv.remove(), 4000);
 
                 // Update status in the UI
                 const statusText = document.querySelector('#coiStatus');
@@ -708,12 +708,12 @@ window.uploadSavedCOI = function(policyId, instructionDiv) {
             });
 
             if (response.ok) {
-                // Show success message
-                const successDiv = document.createElement('div');
-                successDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 6px; z-index: 10000;';
-                successDiv.innerHTML = '<i class="fas fa-check-circle"></i> COI uploaded and saved successfully!';
-                document.body.appendChild(successDiv);
-                setTimeout(() => successDiv.remove(), 3000);
+                // Show success message - DISABLED
+                // const successDiv = document.createElement('div');
+                // successDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 6px; z-index: 10000;';
+                // successDiv.innerHTML = '<i class="fas fa-check-circle"></i> COI uploaded and saved successfully!';
+                // document.body.appendChild(successDiv);
+                // setTimeout(() => successDiv.remove(), 3000);
 
                 // Update status
                 const statusText = document.querySelector('#coiStatus');

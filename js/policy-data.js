@@ -3,8 +3,8 @@
 
 class PolicyDataManager {
     constructor() {
-        console.log('💾 PolicyDataManager constructor called');
-        this.apiBase = '';  // Use relative URLs
+        console.log('💾 PolicyDataManager constructor called - Updated flattening logic v2.0 - ' + new Date().toISOString());
+        this.apiBase = 'https://162-220-14-239.nip.io';  // Use working HTTPS endpoint
         console.log('💾 Starting database initialization...');
         this.initializeDatabase();
     }
@@ -125,11 +125,47 @@ class PolicyDataManager {
             console.log('🔍 getAllPolicies: data type:', typeof data);
 
             if (Array.isArray(data)) {
-                // Server now returns normalized policies directly
-                console.log('🔍 getAllPolicies: Returning server-normalized array of', data.length, 'policies');
+                console.log('🔍 getAllPolicies: FLATTENING LOGIC EXECUTING - Processing array with', data.length, 'items');
+
+                // Check if this is nested format: [{policies: [...]}, {policies: [...]}]
+                let flattenedPolicies = [];
+
+                for (let i = 0; i < data.length; i++) {
+                    const item = data[i];
+                    console.log(`🔍 getAllPolicies: Processing item ${i}:`, {
+                        hasId: !!(item?.id),
+                        hasPolicyNumber: !!(item?.policy_number),
+                        hasPolicyNumberAlt: !!(item?.policyNumber),
+                        hasPoliciesArray: !!(item?.policies && Array.isArray(item.policies)),
+                        policiesCount: item?.policies?.length || 0,
+                        itemKeys: Object.keys(item || {})
+                    });
+
+                    if (item && item.policies && Array.isArray(item.policies)) {
+                        console.log(`🔍 getAllPolicies: EXTRACTING ${item.policies.length} policies from nested container ${i}`);
+                        // This is nested format - extract the policies
+                        flattenedPolicies.push(...item.policies);
+                    } else if (item && (item.id || item.policy_number || item.policyNumber)) {
+                        console.log(`🔍 getAllPolicies: Adding direct policy object ${i}`);
+                        // This is already a policy object
+                        flattenedPolicies.push(item);
+                    } else {
+                        console.log(`🔍 getAllPolicies: Skipping unknown item format ${i}:`, item);
+                    }
+                }
+
+                console.log('🔍 getAllPolicies: FLATTENING COMPLETE - Flattened', data.length, 'containers into', flattenedPolicies.length, 'policies');
+
+                // VERY VISIBLE SUCCESS MESSAGE
+                if (flattenedPolicies.length > 0) {
+                    console.log('🎉🎉🎉 FLATTENING SUCCESS: Found', flattenedPolicies.length, 'policies after flattening! 🎉🎉🎉');
+                    flattenedPolicies.forEach((policy, i) => {
+                        console.log(`✅ Flattened Policy ${i+1}: ${policy.policy_number} - ${policy.insured_name}`);
+                    });
+                }
 
                 // Log policy structures for debugging specific policies
-                data.forEach(policy => {
+                flattenedPolicies.forEach(policy => {
                     if (policy.id === 'POL966740' || policy.policyNumber === 'POL966740') {
                         console.log('🚨 CLIENT DEBUG - POL966740 structure from server:', {
                             id: policy.id,
@@ -142,7 +178,7 @@ class PolicyDataManager {
                     }
                 });
 
-                return data;
+                return flattenedPolicies;
             } else if (data && data.success && data.policies) {
                 // Legacy format fallback
                 console.log('🔍 getAllPolicies: Returning legacy object.policies with', data.policies.length, 'policies');
@@ -413,6 +449,37 @@ class PolicyDataManager {
         }
     }
 
+    // Get policies by client ID (for CRM integration)
+    async getUserPoliciesByClientId(clientId) {
+        try {
+            console.log('🔍 getUserPoliciesByClientId: Looking for client ID:', clientId);
+
+            // Get all policies from the policies API
+            const response = await fetch(`${this.apiBase}/api/policies`);
+            const allPolicies = await response.json();
+            console.log('🔍 getUserPoliciesByClientId: Found', allPolicies.length, 'total policies');
+
+            // Filter policies that belong to this client
+            const clientPolicies = allPolicies.filter(policy => {
+                // Check if policy is associated with this client
+                const matches = policy.clientId === clientId ||
+                               policy.client_id === clientId ||
+                               (policy.policies && policy.policies.some(p => p.clientId === clientId));
+
+                if (matches) {
+                    console.log('✅ getUserPoliciesByClientId: Found policy for client:', policy.policy_number || policy.policyNumber);
+                }
+                return matches;
+            });
+
+            console.log('🔍 getUserPoliciesByClientId: Found', clientPolicies.length, 'policies for client', clientId);
+            return clientPolicies;
+        } catch (error) {
+            console.error('❌ Error fetching client policies:', error);
+            return [];
+        }
+    }
+
     // Clear database and reinitialize
     async clearAll() {
         try {
@@ -488,14 +555,209 @@ class PolicyDataManager {
         // The actual display refresh should be handled by the UI components
         console.log('🔄 Policy display refresh requested');
     }
+
+    // Email/Password functionality - connects to CRM clients
+    async checkEmailExists(email) {
+        try {
+            console.log('🔍 checkEmailExists: Checking email in CRM clients:', email);
+
+            // Get clients from CRM API
+            const response = await fetch(`${this.apiBase}/api/clients`);
+            const data = await response.json();
+            console.log('🔍 checkEmailExists: CRM response:', data);
+
+            // Extract clients array from response
+            const clients = data.clients || [];
+            console.log('🔍 checkEmailExists: Found', clients.length, 'clients in CRM');
+
+            // Check if email exists in any client record
+            const emailExists = clients.some(client => {
+                // Check multiple email fields that might exist
+                const clientEmail = client.email || client.client_email || client.contact_email;
+                const match = clientEmail && clientEmail.toLowerCase() === email.toLowerCase();
+                if (match) {
+                    console.log('✅ checkEmailExists: Found email match in client:', client.name || client.client_name);
+                }
+                return match;
+            });
+
+            console.log('🔍 checkEmailExists: Email exists in CRM:', emailExists);
+            return emailExists;
+        } catch (error) {
+            console.error('❌ Error checking email in CRM:', error);
+            return false;
+        }
+    }
+
+    async checkPasswordExists(email) {
+        try {
+            console.log('🔍 checkPasswordExists: Checking password for email in CRM:', email);
+
+            // Get clients from CRM API
+            const response = await fetch(`${this.apiBase}/api/clients`);
+            const data = await response.json();
+
+            // Extract clients array from response
+            const clients = data.clients || [];
+
+            // Find client by email
+            const client = clients.find(c => {
+                const clientEmail = c.email || c.client_email || c.contact_email;
+                return clientEmail && clientEmail.toLowerCase() === email.toLowerCase();
+            });
+
+            const hasPassword = client && client.password;
+            console.log('🔍 checkPasswordExists: Password exists in CRM:', hasPassword);
+            return hasPassword;
+        } catch (error) {
+            console.error('❌ Error checking password in CRM:', error);
+            return false;
+        }
+    }
+
+    async createPassword(email, password) {
+        try {
+            console.log('🔐 createPassword: Creating password for email in CRM:', email);
+
+            // Get clients from CRM API
+            const response = await fetch(`${this.apiBase}/api/clients`);
+            const data = await response.json();
+
+            // Extract clients array from response
+            const clients = data.clients || [];
+
+            // Find client by email
+            const client = clients.find(c => {
+                const clientEmail = c.email || c.client_email || c.contact_email;
+                return clientEmail && clientEmail.toLowerCase() === email.toLowerCase();
+            });
+
+            if (!client) {
+                return {
+                    success: false,
+                    error: 'Email not found in system'
+                };
+            }
+
+            if (client.password) {
+                return {
+                    success: false,
+                    error: 'Password already exists for this email'
+                };
+            }
+
+            // Update client with password via CRM API - use POST with full client object
+            const updatedClient = {
+                ...client,
+                password: password,
+                portalPassword: password  // Sync both fields
+            };
+
+            const updateResponse = await fetch(`${this.apiBase}/api/clients`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedClient)
+            });
+
+            const result = await updateResponse.json();
+
+            if (result.success || updateResponse.ok) {
+                console.log('✅ Password created successfully in CRM');
+                return {
+                    success: true,
+                    message: 'Password created successfully'
+                };
+            } else {
+                return {
+                    success: false,
+                    error: 'Failed to save password'
+                };
+            }
+        } catch (error) {
+            console.error('❌ Error creating password in CRM:', error);
+            return {
+                success: false,
+                error: 'System error occurred'
+            };
+        }
+    }
+
+    async authenticateUserByEmail(email, password) {
+        try {
+            console.log('🔐 authenticateUserByEmail: Starting email authentication with CRM');
+            console.log('🔐 INPUT - Email:', email);
+
+            // Get clients from CRM API
+            const response = await fetch(`${this.apiBase}/api/clients`);
+            const data = await response.json();
+
+            // Extract clients array from response
+            const clients = data.clients || [];
+
+            // Find client by email
+            const client = clients.find(c => {
+                const clientEmail = c.email || c.client_email || c.contact_email;
+                return clientEmail && clientEmail.toLowerCase() === email.toLowerCase();
+            });
+
+            if (!client) {
+                console.log('❌ Email not found in CRM clients');
+                return {
+                    success: false,
+                    error: 'Email not found in system'
+                };
+            }
+
+            // Check password
+            if (!client.password || client.password !== password) {
+                console.log('❌ Invalid password for email');
+                return {
+                    success: false,
+                    error: 'Invalid email or password'
+                };
+            }
+
+            // Check if client is active
+            const isActive = client.status !== 'Inactive';
+            if (!isActive) {
+                return {
+                    success: false,
+                    error: 'Your account is currently inactive. Please contact your agent for assistance.',
+                    blocked: true
+                };
+            }
+
+            console.log('✅ CRM email authentication successful');
+            return {
+                success: true,
+                user: {
+                    name: client.name || client.client_name,
+                    email: client.email || client.client_email || client.contact_email,
+                    phone: client.phone || client.client_phone || client.contact_phone,
+                    client_id: client.id
+                },
+                client: client,
+                token: 'client_token_' + client.id
+            };
+        } catch (error) {
+            console.error('❌ CRM email authentication error:', error);
+            return {
+                success: false,
+                error: 'Authentication failed'
+            };
+        }
+    }
 }
 
 // Global instance
 try {
-    console.log('🚀 Initializing PolicyDataManager...');
+    console.log('🚀 Initializing PolicyDataManager v2.0 with enhanced flattening...');
     window.policyDB = new PolicyDataManager();
     console.log('✅ Policy Data Manager initialized - Server-side storage ready');
     console.log('💾 PolicyDataManager available at window.policyDB:', !!window.policyDB);
+    console.log('🔧 Policy-data.js loaded at:', new Date().toISOString());
 } catch (error) {
     console.error('❌ Failed to initialize PolicyDataManager:', error);
     console.error('❌ Error stack:', error.stack);

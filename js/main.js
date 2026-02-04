@@ -4,7 +4,6 @@
 const header = document.getElementById('header');
 const navToggle = document.getElementById('navToggle');
 const navMenu = document.getElementById('navMenu');
-const backToTop = document.getElementById('backToTop');
 const quoteForm = document.getElementById('quoteForm');
 const contactForm = document.getElementById('contactForm');
 
@@ -22,14 +21,6 @@ window.addEventListener('scroll', () => {
         }
     }
     
-    // Show/hide back to top button
-    if (backToTop) {
-        if (currentScroll > 300) {
-            backToTop.classList.add('show');
-        } else {
-            backToTop.classList.remove('show');
-        }
-    }
     
     lastScroll = currentScroll;
 });
@@ -74,15 +65,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Back to Top Button
-if (backToTop) {
-    backToTop.addEventListener('click', () => {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    });
-}
 
 // Number Counter Animation - Removed since statistics section was removed
 
@@ -183,106 +165,6 @@ if (contactForm) {
     });
 }
 
-// Notification System
-const showNotification = (message, type = 'info') => {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <span>${message}</span>
-            <button class="notification-close">&times;</button>
-        </div>
-    `;
-    
-    // Add styles dynamically
-    const style = document.createElement('style');
-    style.textContent = `
-        .notification {
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            min-width: 300px;
-            padding: 1rem 1.5rem;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 9999;
-            animation: slideIn 0.3s ease;
-        }
-        
-        .notification-success {
-            border-left: 4px solid #27ae60;
-        }
-        
-        .notification-error {
-            border-left: 4px solid #e74c3c;
-        }
-        
-        .notification-info {
-            border-left: 4px solid #3498db;
-        }
-        
-        .notification-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .notification-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #999;
-            padding: 0;
-            line-height: 1;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-    `;
-    
-    if (!document.querySelector('#notification-styles')) {
-        style.id = 'notification-styles';
-        document.head.appendChild(style);
-    }
-    
-    document.body.appendChild(notification);
-    
-    // Close button functionality
-    notification.querySelector('.notification-close').addEventListener('click', () => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    });
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notification.remove(), 300);
-        }
-    }, 5000);
-};
 
 // Intersection Observer for scroll animations
 const observerOptions = {

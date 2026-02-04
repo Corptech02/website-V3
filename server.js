@@ -486,38 +486,138 @@ app.get('/vigagency-internal/policy-detail/:policyNumber', async (req, res) => {
     proxyReq.end();
 });
 
-// CRM API Proxy - Forward to localhost vanguard backend (fallback for other routes)
-app.use('/api/crm', createProxyMiddleware({
-    target: 'http://127.0.0.1:3001',
-    changeOrigin: true,
-    pathRewrite: {
-        '^/api/crm': '/api/vigagency/crm'
-    },
-    headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-    },
-    onProxyReq: (proxyReq, req, res) => {
-        console.log('🔗 Proxying CRM request:', req.path);
-    },
-    onProxyRes: (proxyRes, req, res) => {
-        console.log('✅ CRM proxy response:', proxyRes.statusCode);
-        // Add CORS headers
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    },
-    onError: (err, req, res) => {
-        console.error('❌ CRM proxy error:', err);
+// Direct CRM API route - clients endpoint
+app.get('/api/crm/clients', async (req, res) => {
+    const http = require('http');
+
+    console.log('🔗 VigAgency CRM clients proxy request:', req.query);
+
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    try {
+        // Build query string from request
+        const queryString = new URLSearchParams(req.query).toString();
+        const backendPath = `/api/vigagency/crm/clients${queryString ? '?' + queryString : ''}`;
+
+        const data = await new Promise((resolve, reject) => {
+            const options = {
+                hostname: '127.0.0.1',
+                port: 3001,
+                path: backendPath,
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            const proxyReq = http.request(options, (proxyRes) => {
+                let responseData = '';
+                proxyRes.on('data', (chunk) => responseData += chunk);
+                proxyRes.on('end', () => {
+                    try {
+                        const jsonData = JSON.parse(responseData);
+                        resolve(jsonData);
+                    } catch (parseErr) {
+                        reject(new Error('Invalid JSON response from backend'));
+                    }
+                });
+            });
+
+            proxyReq.on('error', (err) => {
+                reject(new Error(`Backend connection failed: ${err.message}`));
+            });
+
+            proxyReq.on('timeout', () => {
+                proxyReq.destroy();
+                reject(new Error('Backend request timeout'));
+            });
+
+            proxyReq.setTimeout(10000);
+            proxyReq.end();
+        });
+
+        console.log(`✅ VigAgency CRM clients proxy success: ${data.clients?.length || 0} clients`);
+        res.json(data);
+
+    } catch (error) {
+        console.error('❌ VigAgency CRM clients proxy error:', error);
         res.status(500).json({
             success: false,
-            error: err.message,
+            error: error.message,
+            clients: []
+        });
+    }
+});
+
+// Direct CRM API route - leads endpoint
+app.get('/api/crm/leads', async (req, res) => {
+    const http = require('http');
+
+    console.log('🔗 VigAgency CRM leads proxy request:', req.query);
+
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    try {
+        // Build query string from request
+        const queryString = new URLSearchParams(req.query).toString();
+        const backendPath = `/api/vigagency/crm/leads${queryString ? '?' + queryString : ''}`;
+
+        const data = await new Promise((resolve, reject) => {
+            const options = {
+                hostname: '127.0.0.1',
+                port: 3001,
+                path: backendPath,
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            const proxyReq = http.request(options, (proxyRes) => {
+                let responseData = '';
+                proxyRes.on('data', (chunk) => responseData += chunk);
+                proxyRes.on('end', () => {
+                    try {
+                        const jsonData = JSON.parse(responseData);
+                        resolve(jsonData);
+                    } catch (parseErr) {
+                        reject(new Error('Invalid JSON response from backend'));
+                    }
+                });
+            });
+
+            proxyReq.on('error', (err) => {
+                reject(new Error(`Backend connection failed: ${err.message}`));
+            });
+
+            proxyReq.on('timeout', () => {
+                proxyReq.destroy();
+                reject(new Error('Backend request timeout'));
+            });
+
+            proxyReq.setTimeout(10000);
+            proxyReq.end();
+        });
+
+        console.log(`✅ VigAgency CRM leads proxy success: ${data.leads?.length || 0} leads`);
+        res.json(data);
+
+    } catch (error) {
+        console.error('❌ VigAgency CRM leads proxy error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
             leads: [],
             total: 0
         });
     }
-}));
+});
 
 
 // Document upload endpoint

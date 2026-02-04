@@ -1,42 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
-    // CRITICAL: Fix application modal z-index to appear above lead profile
-    (function() {
-        function fixModalZIndex() {
-            // Find all fixed position modals with dark backgrounds
-            document.querySelectorAll('div[style*="position: fixed"]').forEach(function(el) {
-                var style = el.getAttribute('style') || '';
-                // Check if it has a dark background (application modal)
-                if (style.includes('rgba(0, 0, 0, 0.8)') || style.includes('rgba(0,0,0,0.8)')) {
-                    var currentZ = parseInt(el.style.zIndex) || 0;
-                    // If z-index is in the 9999999 range (application modal), boost it
-                    if (currentZ >= 9999999 && currentZ < 999999999) {
-                        el.style.zIndex = '999999999';
-                        console.log('Fixed application modal z-index to 999999999');
-                    }
-                }
-            });
-        }
-        
-        // Run on page load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', fixModalZIndex);
-        } else {
-            fixModalZIndex();
-        }
-        
-        // Monitor for new elements
-        setInterval(fixModalZIndex, 200);
-        
-        // Also monitor DOM changes
-        if (typeof MutationObserver !== 'undefined') {
-            var observer = new MutationObserver(fixModalZIndex);
-            observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
-        }
-    })();
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -114,7 +78,7 @@
     <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
 
     <!-- Preload Critical Resources -->
-    <link rel="preload" href="css/styles.css" as="style">
+    <link rel="preload" href="css/styles.css?v=1768185620" as="style">
     <link rel="preload" href="images/v-logo.png" as="image">
 
     <!-- Structured Data (JSON-LD) -->
@@ -256,8 +220,8 @@
     <link rel="icon" type="image/png" href="images/v-logo.png?v=2">
     <link rel="shortcut icon" type="image/png" href="images/v-logo.png?v=2">
     <link rel="apple-touch-icon" href="images/v-logo.png?v=2">
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="/favicon.png" type="image/png">
+    <link rel="stylesheet" href="css/styles.css?v=1768185620">
     <link rel="stylesheet" href="css/coi-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -274,9 +238,10 @@
                 </div>
                 <div class="nav-menu" id="navMenu">
                     <ul class="nav-list">
+                        <li class="nav-item"><a href="pages/login.html" class="nav-link">Login</a></li>
                         <li class="nav-item"><a href="#home" class="nav-link">Home</a></li>
                         <li class="nav-item dropdown">
-                            <a href="#products" class="nav-link">Products <i class="fas fa-chevron-down"></i></a>
+                            <a href="#products" class="nav-link">Products</a>
                             <div class="dropdown-content">
                                 <a href="pages/commercial-auto.html">Commercial Auto Insurance</a>
                                 <a href="pages/trucking-insurance.html">Trucking Insurance</a>
@@ -465,7 +430,7 @@
             </div>
             <div class="claims-cta">
                 <a href="#" class="btn btn-primary btn-large">File a Claim Now</a>
-                <span class="claims-phone">Or Call: <strong>(330) 460-0872</strong></span>
+                <span class="claims-phone">Or Call: <strong>(866) 628-9441</strong></span>
             </div>
         </div>
     </section>
@@ -766,14 +731,14 @@
                         <i class="fas fa-phone"></i>
                         <div>
                             <h4>Phone</h4>
-                            <p>Main: (330) 460-0872<br>Claims: (330) 460-0872</p>
+                            <p>Main: (866) 628-9441<br>Claims: (866) 628-9441</p>
                         </div>
                     </div>
                     <div class="info-item">
                         <i class="fas fa-envelope"></i>
                         <div>
                             <h4>Email</h4>
-                            <p>contact@vigagency.com<br>Grant@vigagency.com</p>
+                            <p>contact@vigagency.com</p>
                         </div>
                     </div>
                     <div class="info-item">
@@ -851,99 +816,56 @@
             <div class="footer-bottom">
                 <p>&copy; 2024 Vanguard Insurance Group. All rights reserved.</p>
                 <div class="footer-links">
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms of Service</a>
-                    <a href="#">Cookie Policy</a>
+                    <a href="pages/privacy-policy.html">Privacy Policy</a>
+                    <a href="pages/terms-conditions.html">Terms of Service</a>
+                    <a href="pages/privacy-policy.html">Cookie Policy</a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <!-- Back to Top Button -->
-    <button class="back-to-top" id="backToTop">
-        <i class="fas fa-chevron-up"></i>
-    </button>
 
-    <!-- COI Request Modal -->
-    <div class="coi-modal" id="coiModal">
-        <div class="coi-modal-content">
-            <div class="coi-modal-header">
-                <h2><i class="fas fa-certificate"></i> Request Certificate of Insurance</h2>
-                <button class="coi-close" onclick="closeCOIModal()">&times;</button>
-            </div>
-            <div class="coi-modal-body">
-                <p class="coi-intro">Please provide your policy information to request your Certificate of Insurance. We'll process your request within 24 hours.</p>
-                
-                <form id="coiRequestForm" onsubmit="submitCOIRequest(event)">
-                    <div class="coi-form-group">
-                        <label for="policyNumber">
-                            <i class="fas fa-file-contract"></i> Policy Number *
-                        </label>
-                        <input type="text" id="policyNumber" name="policyNumber" required 
-                               placeholder="Enter your policy number (e.g., CA-2024-12345)" 
-                               pattern="[A-Z]{2}-\d{4}-\d{5}" 
-                               title="Format: XX-YYYY-NNNNN">
-                        <small>Format: XX-YYYY-NNNNN (e.g., CA-2024-12345)</small>
-                    </div>
-                    
-                    <div class="coi-form-group">
-                        <label for="phoneNumber">
-                            <i class="fas fa-phone"></i> Phone Number *
-                        </label>
-                        <input type="tel" id="phoneNumber" name="phoneNumber" required 
-                               placeholder="(555) 123-4567" 
-                               pattern="\(\d{3}\) \d{3}-\d{4}"
-                               title="Format: (555) 123-4567">
-                        <small>We'll contact you at this number if we need additional information</small>
-                    </div>
-                    
-                    <div class="coi-form-group">
-                        <label for="certificateHolder">
-                            <i class="fas fa-building"></i> Certificate Holder Name
-                        </label>
-                        <input type="text" id="certificateHolder" name="certificateHolder" 
-                               placeholder="Name of entity requiring the certificate">
-                    </div>
-                    
-                    <div class="coi-form-group">
-                        <label for="email">
-                            <i class="fas fa-envelope"></i> Email Address *
-                        </label>
-                        <input type="email" id="email" name="email" required 
-                               placeholder="your.email@example.com">
-                        <small>We'll send your COI to this email address</small>
-                    </div>
-                    
-                    <div class="coi-form-group">
-                        <label for="additionalInfo">
-                            <i class="fas fa-comment"></i> Additional Information
-                        </label>
-                        <textarea id="additionalInfo" name="additionalInfo" rows="3" 
-                                  placeholder="Any special requirements or additional insured information"></textarea>
-                    </div>
-                    
-                    <div class="coi-form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeCOIModal()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Submit Request
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- COI Success Message -->
-    <div class="coi-success" id="coiSuccess">
-        <div class="coi-success-content">
-            <i class="fas fa-check-circle"></i>
-            <h3>Request Submitted Successfully!</h3>
-            <p>Your Certificate of Insurance request has been received. We'll send it to your email within 24 hours.</p>
-            <button class="btn btn-primary" onclick="closeSuccessMessage()">OK</button>
-        </div>
-    </div>
 
     <script src="js/main.js"></script>
-    <script src="js/coi-request.js"></script>
+
+    <script>
+        // Handle dynamic Login/Profile switching based on login status
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstNavLink = document.querySelector('.nav-list .nav-item:first-child .nav-link');
+
+            // Check if user is logged in with more comprehensive checks
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' ||
+                              localStorage.getItem('policyNumber') !== null && localStorage.getItem('policyNumber') !== '' ||
+                              sessionStorage.getItem('isLoggedIn') === 'true' ||
+                              sessionStorage.getItem('policyNumber') !== null && sessionStorage.getItem('policyNumber') !== '' ||
+                              // Check if we came from dashboard (referrer check)
+                              document.referrer.includes('/pages/policyholder-dashboard.html');
+
+            console.log('Login check:', {
+                localStorage_isLoggedIn: localStorage.getItem('isLoggedIn'),
+                localStorage_policyNumber: localStorage.getItem('policyNumber'),
+                sessionStorage_isLoggedIn: sessionStorage.getItem('isLoggedIn'),
+                sessionStorage_policyNumber: sessionStorage.getItem('policyNumber'),
+                referrer: document.referrer,
+                finalResult: isLoggedIn
+            });
+
+            if (firstNavLink) {
+                if (isLoggedIn) {
+                    // Change to Profile when logged in
+                    firstNavLink.textContent = 'Profile';
+                    firstNavLink.href = 'pages/policyholder-dashboard.html';
+                    firstNavLink.classList.remove('logout-link');
+                    console.log('Changed to Profile');
+                } else {
+                    // Show Login when not logged in
+                    firstNavLink.textContent = 'Login';
+                    firstNavLink.href = 'pages/login.html';
+                    firstNavLink.classList.remove('logout-link');
+                    console.log('Showing Login');
+                }
+            }
+        });
+    </script>
 </body>
 </html>

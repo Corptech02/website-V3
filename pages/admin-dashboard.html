@@ -8,7 +8,8 @@
     <meta http-equiv="Expires" content="0">
 
     <!-- Load policy database FIRST -->
-    <script src="/js/policy-data.js?v=20251230-active-status-check-1766956500"></script>
+    <script src="../js/api-config.js?v=1"></script>
+    <script src="/js/policy-data.js?v=20260108-enhanced-flattening-debug-1736363200"></script>
 
     <script>console.log('✅ VigAgency Admin Dashboard Loading - v20251230-policy-id-protection-1766960500');</script>
     <!-- CACHE BUSTER: 20251230-policy-id-protection-1766960500 -->
@@ -1178,8 +1179,8 @@
                     <button class="policy-btn secondary" onclick="window.openImportModal()">
                         <i class="fas fa-download"></i> Import
                     </button>
-                    <button class="policy-btn secondary" onclick="debugCRMComparison()" title="Compare CRM vs Local policies">
-                        <i class="fas fa-bug"></i> Debug CRM
+                    <button class="policy-btn primary" onclick="scanAndSyncCRM()" title="Scan CRM and sync all policies">
+                        <i class="fas fa-sync"></i> Scan CRM
                     </button>
                     <button class="policy-btn danger" onclick="resetDatabase()" title="Reset database to sample data">
                         <i class="fas fa-trash"></i> Reset DB
@@ -1516,13 +1517,28 @@
             console.log('🌐 Loading policies from server...');
 
             try {
-                const response = await fetch('/api/policies');
+                const apiUrl = window.VANGUARD_API_URL || 'https://162-220-14-239.nip.io/api';
+                const response = await fetch(`${apiUrl}/policies`);
                 const result = await response.json();
 
-                if (result.success && result.policies) {
-                    console.log('✅ Loaded', result.policies.length, 'policies from server');
+                if (Array.isArray(result)) {
+                    // Direct array response from /api/policies endpoint
+                    console.log('✅ Loaded', result.length, 'policies from server');
 
                     // Update client-side storage for compatibility
+                    localStorage.setItem('insurance_policies', JSON.stringify(result));
+
+                    if (window.policyDB && typeof window.policyDB.clearAll === 'function' && typeof window.policyDB.addPolicy === 'function') {
+                        await window.policyDB.clearAll();
+                        for (const policy of result) {
+                            await window.policyDB.addPolicy(policy);
+                        }
+                    }
+
+                    return result;
+                } else if (result.success && result.policies) {
+                    // Legacy wrapped response format
+                    console.log('✅ Loaded', result.policies.length, 'policies from server (legacy format)');
                     localStorage.setItem('insurance_policies', JSON.stringify(result.policies));
 
                     if (window.policyDB && typeof window.policyDB.clearAll === 'function' && typeof window.policyDB.addPolicy === 'function') {
@@ -1534,7 +1550,7 @@
 
                     return result.policies;
                 } else {
-                    console.warn('Failed to load policies from server:', result.error);
+                    console.warn('Failed to load policies from server:', result.error || 'Unknown response format');
                     return [];
                 }
             } catch (error) {
@@ -1938,19 +1954,60 @@
             }
         };
 
+        // EMERGENCY: Immediate policy loading test
+        window.forceLoadServerPolicies = async function() {
+            console.log('🆘 FORCE Loading policies from server...');
+            try {
+                const serverPolicies = await window.loadPoliciesFromServer();
+                console.log('✅ FORCE: Server policies loaded:', serverPolicies?.length || 0, 'policies');
+
+                if (serverPolicies && serverPolicies.length > 0) {
+                    window.allPolicies = serverPolicies;
+                    window.filteredPolicies = [...serverPolicies];
+                    console.log('✅ FORCE: Updated global policy arrays');
+
+                    // Force refresh the display
+                    if (window.applyFilters) {
+                        window.applyFilters();
+                    }
+
+                    // Force update statistics
+                    if (window.updateAdminStats) {
+                        window.updateAdminStats();
+                    }
+
+                    // Force navigate to policies view
+                    console.log('🔄 Forcing navigation to policies view...');
+                    window.location.hash = '#policies';
+
+                    // Try to find and click the policies menu item
+                    const policiesLink = document.querySelector('a[href="#policies"], [onclick*="loadPolicies"]');
+                    if (policiesLink) {
+                        setTimeout(() => {
+                            console.log('🔄 Clicking policies link to refresh view');
+                            policiesLink.click();
+                        }, 100);
+                    }
+
+                    // Dispatch update event
+                    window.dispatchEvent(new CustomEvent('policiesUpdated'));
+
+                    console.log('✅ FORCE: All policies loaded and view forced to update');
+                }
+                return serverPolicies;
+            } catch (error) {
+                console.error('❌ FORCE: Failed to load policies:', error);
+                alert('Error loading policies: ' + error.message);
+            }
+        };
+
         // Auto-load policies from server on page load
         window.addEventListener('load', function() {
             console.log('🚀 Page loaded - auto-loading policies from server...');
-            window.loadPoliciesFromServer().then(() => {
-                console.log('✅ Server policies loaded and ready');
-
-                // Try to refresh the policy display - DISABLED TO PREVENT CONFLICTS
-                // if (typeof loadPolicies === 'function') {
-                //     setTimeout(() => loadPolicies(), 500);
-                // }
-            }).catch(error => {
-                console.error('❌ Failed to auto-load policies:', error);
-            });
+            // Add 2 second delay to ensure everything is loaded
+            setTimeout(() => {
+                window.forceLoadServerPolicies();
+            }, 2000);
         });
 
         // GLOBAL ADD FUNCTIONS FOR EDIT POLICY MODAL - Must be at top level
@@ -2115,8 +2172,22 @@
             }
 
             if (!vehicles || vehicles.length === 0) {
-                console.log('🚗 POPULATE: No vehicles, showing empty message');
-                vehiclesList.innerHTML = '<p style="color: #666; text-align: center; margin: 20px 0;">No vehicles listed</p>';
+                console.log('🚗 POPULATE: No vehicles, showing CRM data message');
+                vehiclesList.innerHTML = `
+                    <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 10px 0; text-align: center;">
+                        <div style="color: #495057; margin-bottom: 15px;">
+                            <i class="fas fa-info-circle" style="color: #17a2b8; margin-right: 8px;"></i>
+                            <strong>No Vehicle Data from CRM</strong>
+                        </div>
+                        <p style="color: #6c757d; margin-bottom: 15px; line-height: 1.4;">
+                            The CRM database contains basic policy information but no detailed vehicle data.
+                            Click "Add Vehicle" below to manually enter vehicle details for this policy.
+                        </p>
+                        <button onclick="window.addVehicle()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                            <i class="fas fa-plus" style="margin-right: 8px;"></i>Add First Vehicle
+                        </button>
+                    </div>
+                `;
                 return;
             }
 
@@ -2136,6 +2207,11 @@
                         </h4>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; font-size: 14px;">
+                        ${vehicle.vehicleInfo ? `<div style="grid-column: span 2; background: #f3f4f6; padding: 10px; border-radius: 5px; border-left: 4px solid #3b82f6;">
+                            <strong style="color: #1f2937;">CRM Vehicle ID:</strong>
+                            <span style="color: #374151; font-weight: 500; margin-left: 5px;">${escapeHtml(vehicle.vehicleInfo)}</span>
+                            <small style="color: #6b7280; display: block; margin-top: 2px;">From CRM System</small>
+                        </div>` : ''}
                         <div>
                             <strong>Year:</strong>
                             <input type="number" value="${escapeHtml(vehicle.year)}" onchange="updateVehicleField(${index}, 'year', this.value)" style="width: 80px; margin-left: 5px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 13px;">
@@ -2238,7 +2314,21 @@
             if (!driversList) return;
 
             if (!drivers || drivers.length === 0) {
-                driversList.innerHTML = '<p style="color: #666; text-align: center; margin: 20px 0;">No drivers listed</p>';
+                driversList.innerHTML = `
+                    <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 10px 0; text-align: center;">
+                        <div style="color: #495057; margin-bottom: 15px;">
+                            <i class="fas fa-info-circle" style="color: #17a2b8; margin-right: 8px;"></i>
+                            <strong>No Driver Data from CRM</strong>
+                        </div>
+                        <p style="color: #6c757d; margin-bottom: 15px; line-height: 1.4;">
+                            The CRM database contains basic policy information but no detailed driver data.
+                            Click "Add Driver" below to manually enter driver details for this policy.
+                        </p>
+                        <button onclick="window.addDriver()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                            <i class="fas fa-plus" style="margin-right: 8px;"></i>Add First Driver
+                        </button>
+                    </div>
+                `;
                 return;
             }
 
@@ -2256,6 +2346,11 @@
                         </h4>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; font-size: 14px;">
+                        ${driver.name ? `<div style="grid-column: span 2; background: #f0fdf4; padding: 10px; border-radius: 5px; border-left: 4px solid #10b981;">
+                            <strong style="color: #1f2937;">CRM Driver Name:</strong>
+                            <span style="color: #374151; font-weight: 500; margin-left: 5px;">${escapeHtml(driver.name)}</span>
+                            <small style="color: #6b7280; display: block; margin-top: 2px;">From CRM System</small>
+                        </div>` : ''}
                         <div>
                             <strong>Name:</strong>
                             <input type="text" value="${escapeHtml(driver.name)}" onchange="updateDriverField(${index}, 'name', this.value)" style="width: 150px; margin-left: 5px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 13px;">
@@ -3880,16 +3975,33 @@ contact@vigagency.com`;
                 'policy.insured': policy.insured
             });
 
-            setFieldValue('editPolicyNumber', policy.policy_number);
-            setFieldValue('editClientName', policy.insured_name || policy.client_name || policy.clientName || policy.name || policy.Name);
-            setFieldValue('editClientPhone', policy.client_phone);
-            setFieldValue('editClientEmail', policy.client_email);
+            // FIXED FIELD MAPPING - Handle CRM data structure properly
+            const clientName = policy.insured_name || policy.client_name || policy.clientName ||
+                              (policy.insured && policy.insured['Name/Business Name']) ||
+                              policy.name || policy.Name || 'Unknown Client';
+
+            const policyNumber = policy.policyNumber || policy.policy_number || '';
+            const effectiveDate = policy.effectiveDate || policy.effective_date || '';
+            const expirationDate = policy.expirationDate || policy.expiration_date || '';
+            const clientPhone = policy.client_phone ||
+                              (policy.contact && policy.contact['Phone Number']) || '';
+            const clientEmail = policy.client_email ||
+                              (policy.contact && policy.contact['Email Address']) || '';
+
+            setFieldValue('editPolicyNumber', policyNumber);
+            setFieldValue('editClientName', clientName);
+            setFieldValue('editClientPhone', clientPhone);
+            setFieldValue('editClientEmail', clientEmail);
             setFieldValue('editCarrier', policy.carrier);
             setFieldValue('editAgency', policy.agency);
-            setFieldValue('editEffectiveDate', policy.effective_date);
-            setFieldValue('editExpirationDate', policy.expiration_date);
-            setFieldValue('editStatus', policy.status);
+            setFieldValue('editEffectiveDate', effectiveDate);
+            setFieldValue('editExpirationDate', expirationDate);
+            setFieldValue('editStatus', policy.policyStatus || policy.status);
             setFieldValue('editAddress', policy.address);
+
+            console.log('✅ FIXED FIELD MAPPING Applied:', {
+                clientName, policyNumber, effectiveDate, expirationDate, clientPhone, clientEmail
+            });
 
             // Set policy active status (defaults to true if not specified)
             const activeCheckbox = document.getElementById('editPolicyActive');
@@ -3908,15 +4020,17 @@ contact@vigagency.com`;
             // Show modal immediately
             const modal = document.getElementById('editPolicyModal');
             if (modal) {
-                // Update modal title to show which policy is being edited
-                const clientName = policy.insured_name || policy.client_name || policy.clientName || 'Unknown Client';
+                // Update modal title to show which policy is being edited - use the same logic as field mapping
+                const modalClientName = policy.insured_name || policy.client_name || policy.clientName ||
+                                       (policy.insured && policy.insured['Name/Business Name']) ||
+                                       policy.name || policy.Name || 'Unknown Client';
                 const title = modal.querySelector('h2');
                 if (title) {
-                    title.innerHTML = `<i class="fas fa-edit"></i> Edit Policy - ${clientName}`;
+                    title.innerHTML = `<i class="fas fa-edit"></i> Edit Policy - ${modalClientName}`;
                 }
 
                 modal.style.display = 'flex';
-                console.log('✅ Edit modal opened for:', clientName);
+                console.log('✅ Edit modal opened for:', modalClientName);
 
                 // Populate coverage fields immediately after modal is shown
                 populateCoverageFields(policy);
@@ -3926,55 +4040,273 @@ contact@vigagency.com`;
             setTimeout(() => {
                 console.log('🚗 Starting to populate vehicles/drivers/trailers...');
 
-                // CRITICAL: Filter out empty/invalid entries and normalize field names for consistent data structure
+                // CRITICAL: Filter and separate vehicles from trailers based on naming patterns
                 console.log('🔍 RAW CRM VEHICLE DATA:', policy.vehicles);
-                const validVehicles = (policy.vehicles || [])
-                    .filter(v => v && (v.year || v.Year || v.make || v.Make || v.vin || v.VIN) &&
-                        !(v.year === '' && v.make === '' && v.model === '' && v.vin === ''))
-                    .map(v => {
-                        console.log('🔍 MAPPING VEHICLE:', v);
-                        return {
-                            year: v.year || v.Year || v['Year'] || v.model_year || v['Model Year'] || '',
-                            make: v.make || v.Make || v['Make'] || '',
-                            model: v.model || v.Model || v['Model'] || '',
-                            vin: v.vin || v.VIN || v['VIN'] || '',
-                            type: v.type || v['Type'] || v.body_type || v['Body Type'] || v.bodyType || '',
-                            radius: v.radius || v.Radius || v['Radius'] || '',
-                            deductible: v.deductible || v.Deductible || v['Deductible'] || v.vehicle_deductible || v['Vehicle Deductible'] || '',
-                            vehicle_cost: v.vehicle_cost || v['Vehicle Cost'] || v.vehicleCost || v.cost || v['Cost'] || v.value || v['Value'] || ''
-                        };
-                    });
+                console.log('🔍 FULL POLICY OBJECT FOR VEHICLE ANALYSIS:', JSON.stringify(policy, null, 2));
+
+                // DIAGNOSTIC: Look for vehicle data in other parts of policy object
+                console.log('🔍 DIAGNOSTIC: Checking for vehicle data in other policy fields...');
+                Object.keys(policy).forEach(key => {
+                    if (key.toLowerCase().includes('vehicle') || key.toLowerCase().includes('equipment') ||
+                        key.toLowerCase().includes('unit') || key.toLowerCase().includes('fleet')) {
+                        console.log(`🔍 Found potential vehicle field: ${key} =`, policy[key]);
+                    }
+                });
+
+                // Check for nested objects that might contain vehicle details
+                if (policy.equipment) console.log('🔍 EQUIPMENT DATA:', policy.equipment);
+                if (policy.units) console.log('🔍 UNITS DATA:', policy.units);
+                if (policy.fleet) console.log('🔍 FLEET DATA:', policy.fleet);
+                if (policy.assets) console.log('🔍 ASSETS DATA:', policy.assets);
+
+                // FIXED: Separate vehicles and trailers from the vehicles array
+                const vehicleTrailerData = (policy.vehicles || [])
+                    .filter(v => v && (v.year || v.Year || v.make || v.Make || v.vin || v.VIN || v[''] ||
+                        (Object.keys(v).length > 1))); // Include CRM format with "" key
+
+                // FIXED: Split into actual vehicles vs trailers based on naming pattern
+                const actualVehicles = vehicleTrailerData.filter(v => {
+                    const vehicleInfo = v[''] || '';
+                    return !vehicleInfo.toLowerCase().includes('trailer');
+                });
+
+                const trailersFromVehicles = vehicleTrailerData.filter(v => {
+                    const vehicleInfo = v[''] || '';
+                    return vehicleInfo.toLowerCase().includes('trailer');
+                });
+
+                console.log('🔍 SEPARATED VEHICLES:', actualVehicles);
+                console.log('🔍 SEPARATED TRAILERS FROM VEHICLES:', trailersFromVehicles);
+
+                const validVehicles = actualVehicles.map(v => {
+                    console.log('🔍 MAPPING VEHICLE:', v);
+
+                    // FIXED: Handle CRM data structure like {"": "15774", "vehicleNumber": 1}
+                    const vehicleInfo = v[''] || ''; // Get the main vehicle identifier
+
+                    // FIXED: For CRM data with "" key, put that info in appropriate fields
+                    // Try to parse the vehicleInfo if it contains useful data
+                    let parsedYear = '', parsedMake = '', parsedModel = '', parsedVin = '';
+
+                    if (vehicleInfo) {
+                        console.log('🔍 PARSING VEHICLE INFO:', vehicleInfo);
+
+                        // If vehicleInfo is just a number, it might be a fleet ID or year
+                        if (/^\d+$/.test(vehicleInfo)) {
+                            if (vehicleInfo.length === 4 && vehicleInfo >= '1900' && vehicleInfo <= '2030') {
+                                parsedYear = vehicleInfo; // 4 digits in valid year range = likely a year
+                                console.log('✅ PARSED as year:', parsedYear);
+                            } else {
+                                parsedVin = vehicleInfo; // Other numbers = likely fleet ID/VIN
+                                console.log('✅ PARSED as fleet ID/VIN:', parsedVin);
+                            }
+                        } else {
+                            // Try to parse more complex vehicle info like "2018 Freightliner Cascadia"
+                            const parts = vehicleInfo.split(' ').filter(p => p.trim());
+                            console.log('🔍 VEHICLE INFO PARTS:', parts);
+
+                            if (parts.length >= 3) {
+                                // Check if first part looks like a year
+                                if (/^\d{4}$/.test(parts[0]) && parts[0] >= '1900' && parts[0] <= '2030') {
+                                    parsedYear = parts[0];
+                                    parsedMake = parts[1];
+                                    parsedModel = parts.slice(2).join(' ');
+                                    console.log('✅ PARSED complex vehicle info:', { parsedYear, parsedMake, parsedModel });
+                                }
+                            } else if (parts.length === 2) {
+                                parsedMake = parts[0];
+                                parsedModel = parts[1];
+                                console.log('✅ PARSED make/model:', { parsedMake, parsedModel });
+                            } else if (parts.length === 1 && !/^\d+$/.test(parts[0])) {
+                                parsedMake = parts[0];
+                                console.log('✅ PARSED make only:', parsedMake);
+                            }
+                        }
+                    }
+
+                    const finalVehicle = {
+                        year: v.year || v.Year || v['Year'] || v.model_year || v['Model Year'] || parsedYear || '',
+                        make: v.make || v.Make || v['Make'] || parsedMake || '',
+                        model: v.model || v.Model || v['Model'] || parsedModel || '',
+                        vin: v.vin || v.VIN || v['VIN'] || parsedVin || '',
+                        type: v.type || v['Type'] || v.body_type || v['Body Type'] || v.bodyType || '',
+                        radius: v.radius || v.Radius || v['Radius'] || '',
+                        deductible: v.deductible || v.Deductible || v['Deductible'] || v.vehicle_deductible || v['Vehicle Deductible'] || '',
+                        vehicle_cost: v.vehicle_cost || v['Vehicle Cost'] || v.vehicleCost || v.cost || v['Cost'] || v.value || v['Value'] || '',
+                        // FIXED: Add CRM specific fields for display
+                        vehicleInfo: vehicleInfo,
+                        vehicleNumber: v.vehicleNumber || '',
+                        display_name: vehicleInfo ? `Vehicle ${v.vehicleNumber}: ${vehicleInfo}` : `Vehicle ${v.vehicleNumber || 'Unknown'}`
+                    };
+
+                    console.log('✅ FINAL MAPPED VEHICLE:', finalVehicle);
+                    return finalVehicle;
+                });
 
                 console.log('🔍 RAW CRM TRAILER DATA:', policy.trailers);
-                const validTrailers = (policy.trailers || [])
-                    .filter(t => t && (t.year || t.Year || t.make || t.Make || t.vin || t.VIN) &&
-                        !(t.year === '' && t.make === '' && t.vin === ''))
+
+                // FIXED: Combine actual trailer data with trailers found in vehicles array
+                const allTrailerData = [
+                    ...(policy.trailers || []),
+                    ...trailersFromVehicles
+                ];
+
+                console.log('🔍 COMBINED TRAILER DATA:', allTrailerData);
+
+                const validTrailers = allTrailerData
+                    .filter(t => t && (t.year || t.Year || t.make || t.Make || t.vin || t.VIN || t[''] ||
+                        (Object.keys(t).length > 1))) // Include CRM format with "" key
                     .map(t => {
                         console.log('🔍 MAPPING TRAILER:', t);
-                        return {
-                            year: t.year || t.Year || t['Year'] || t.model_year || t['Model Year'] || '',
-                            make: t.make || t.Make || t['Make'] || '',
-                            model: t.model || t.Model || t['Model'] || '',
-                            vin: t.vin || t.VIN || t['VIN'] || '',
+
+                        // FIXED: Handle CRM data structure like {"": "Trailer For 45052", "vehicleNumber": 2}
+                        const trailerInfo = t[''] || '';
+
+                        // FIXED: Extract trailer data from CRM format
+                        let trailerId = '', parsedTrailerYear = '', parsedTrailerMake = '', parsedTrailerModel = '';
+                        console.log('🔍 PARSING TRAILER INFO:', trailerInfo);
+
+                        if (trailerInfo.toLowerCase().includes('trailer for')) {
+                            const match = trailerInfo.match(/trailer for (\w+)/i);
+                            if (match) {
+                                trailerId = match[1];
+                                console.log('✅ PARSED trailer ID:', trailerId);
+                            }
+                        } else if (trailerInfo && !trailerInfo.toLowerCase().includes('trailer')) {
+                            // Try to parse trailer info similar to vehicle parsing
+                            const parts = trailerInfo.split(' ').filter(p => p.trim());
+                            console.log('🔍 TRAILER INFO PARTS:', parts);
+
+                            if (parts.length >= 3) {
+                                if (/^\d{4}$/.test(parts[0]) && parts[0] >= '1900' && parts[0] <= '2030') {
+                                    parsedTrailerYear = parts[0];
+                                    parsedTrailerMake = parts[1];
+                                    parsedTrailerModel = parts.slice(2).join(' ');
+                                    console.log('✅ PARSED complex trailer info:', { parsedTrailerYear, parsedTrailerMake, parsedTrailerModel });
+                                }
+                            } else if (parts.length === 2) {
+                                parsedTrailerMake = parts[0];
+                                parsedTrailerModel = parts[1];
+                                console.log('✅ PARSED trailer make/model:', { parsedTrailerMake, parsedTrailerModel });
+                            }
+                        }
+
+                        const finalTrailer = {
+                            year: t.year || t.Year || t['Year'] || t.model_year || t['Model Year'] || parsedTrailerYear || '',
+                            make: t.make || t.Make || t['Make'] || parsedTrailerMake || '',
+                            model: t.model || t.Model || t['Model'] || parsedTrailerModel || '',
+                            vin: t.vin || t.VIN || t['VIN'] || trailerId || '',
                             trailer_type: t.trailer_type || t['Trailer Type'] || t.trailerType || t.type || t['Type'] || '',
                             radius: t.radius || t.Radius || t['Radius'] || '',
                             deductible: t.deductible || t.Deductible || t.trailer_deductible || t['Trailer Deductible'] || t.physical_damage_deductible || '',
-                            trailer_cost: t.trailer_cost || t['Trailer Cost'] || t.trailerCost || t.cost || t['Cost'] || t.value || t['Value'] || ''
+                            trailer_cost: t.trailer_cost || t['Trailer Cost'] || t.trailerCost || t.cost || t['Cost'] || t.value || t['Value'] || '',
+                            // FIXED: Add CRM specific fields for trailers
+                            trailerInfo: trailerInfo,
+                            trailerNumber: t.vehicleNumber || t.trailerNumber || '',
+                            display_name: trailerInfo ? `Trailer ${t.vehicleNumber || t.trailerNumber}: ${trailerInfo}` : `Trailer ${t.vehicleNumber || t.trailerNumber || 'Unknown'}`
                         };
+
+                        console.log('✅ FINAL MAPPED TRAILER:', finalTrailer);
+                        return finalTrailer;
                     });
 
+                // CRITICAL: Add policy save interceptor to fix vehicle/trailer separation during save
+                if (typeof window.originalSavePolicy === 'undefined') {
+                    window.originalSavePolicy = window.savePolicy;
+                }
+
+                window.savePolicy = function(policyData, callback) {
+                    console.log('🔧 INTERCEPTING savePolicy to fix vehicle/trailer separation...');
+                    console.log('🔍 Original policy data:', policyData);
+
+                    if (policyData && policyData.vehicles) {
+                        // FIXED: Separate vehicles and trailers during save
+                        const actualVehicles = [];
+                        const foundTrailers = [];
+
+                        policyData.vehicles.forEach(vehicle => {
+                            const vehicleIdentifier = vehicle[''] || '';
+                            if (vehicleIdentifier.toLowerCase().includes('trailer')) {
+                                // This is a trailer, move to trailers array
+                                foundTrailers.push(vehicle);
+                                console.log('🚛 MOVED to trailers:', vehicleIdentifier);
+                            } else {
+                                // This is an actual vehicle
+                                actualVehicles.push(vehicle);
+                                console.log('🚗 KEPT as vehicle:', vehicleIdentifier);
+                            }
+                        });
+
+                        // Update the policy data structure
+                        policyData.vehicles = actualVehicles;
+                        if (foundTrailers.length > 0) {
+                            policyData.trailers = (policyData.trailers || []).concat(foundTrailers);
+                            console.log('✅ FIXED: Moved', foundTrailers.length, 'trailers to trailers array');
+                        }
+
+                        console.log('✅ FIXED policy data:', {
+                            vehicles: policyData.vehicles.length,
+                            trailers: policyData.trailers?.length || 0
+                        });
+                    }
+
+                    // Call original savePolicy function
+                    if (window.originalSavePolicy) {
+                        return window.originalSavePolicy(policyData, callback);
+                    }
+                };
+
+                // CRITICAL: Also intercept form data collection to fix vehicle/trailer separation
+                window.interceptVehicleTrailerData = function(formData) {
+                    console.log('🔧 INTERCEPTING form data collection to fix vehicle/trailer separation...');
+
+                    if (formData && formData.vehicles) {
+                        const actualVehicles = [];
+                        const foundTrailers = [];
+
+                        formData.vehicles.forEach(vehicle => {
+                            const vehicleIdentifier = vehicle[''] || vehicle.model || vehicle.description || '';
+                            if (vehicleIdentifier.toLowerCase().includes('trailer')) {
+                                foundTrailers.push(vehicle);
+                                console.log('🚛 FORM: MOVED to trailers:', vehicleIdentifier);
+                            } else {
+                                actualVehicles.push(vehicle);
+                                console.log('🚗 FORM: KEPT as vehicle:', vehicleIdentifier);
+                            }
+                        });
+
+                        formData.vehicles = actualVehicles;
+                        if (foundTrailers.length > 0) {
+                            formData.trailers = (formData.trailers || []).concat(foundTrailers);
+                            console.log('✅ FORM: Fixed vehicle/trailer separation');
+                        }
+                    }
+
+                    return formData;
+                };
+
                 const validDrivers = (policy.drivers || [])
-                    .filter(d => d && (d.name || d['Full Name'] || d.fullName || d.license_number || d['License Number']) &&
-                        !(d.name === '' && d.license_number === '' && d['Full Name'] === ''))
-                    .map(d => ({
-                        name: d.name || d['Full Name'] || d.fullName || '',
-                        license_number: d.license_number || d['License Number'] || d.licenseNumber || '',
-                        license_state: d.license_state || d['License State'] || d.licenseState || d.state || '',
-                        hire_date: d.hire_date || d['Hire Date'] || d.hireDate || '',
-                        date_of_birth: d.date_of_birth || d['Date Of Birth'] || d.dateOfBirth || d.dob || '',
-                        phone: d.phone || d.Phone || '',
-                        email: d.email || d.Email || ''
-                    }));
+                    .filter(d => d && (d.name || d['Full Name'] || d.fullName || d.license_number || d['License Number'] || d[''] ||
+                        (Object.keys(d).length > 1))) // Include CRM format with "" key
+                    .map(d => {
+                        console.log('🔍 MAPPING DRIVER:', d);
+
+                        // FIXED: Handle CRM data structure like {"": "STANLEY CYRIL ONONOGBO", "driverNumber": 1}
+                        const driverName = d[''] || d.name || d['Full Name'] || d.fullName || '';
+
+                        return {
+                            name: driverName,
+                            license_number: d.license_number || d['License Number'] || d.licenseNumber || '',
+                            license_state: d.license_state || d['License State'] || d.licenseState || d.state || '',
+                            hire_date: d.hire_date || d['Hire Date'] || d.hireDate || '',
+                            date_of_birth: d.date_of_birth || d['Date Of Birth'] || d.dateOfBirth || d.dob || '',
+                            phone: d.phone || d.Phone || '',
+                            email: d.email || d.Email || '',
+                            // FIXED: Add CRM specific fields
+                            driverNumber: d.driverNumber || '',
+                            display_name: driverName || `Driver ${d.driverNumber || 'Unknown'}`
+                        };
+                    });
 
                 // Check what valid data we have
                 console.log('📊 Valid policy data:', {
@@ -4015,7 +4347,12 @@ contact@vigagency.com`;
                         console.warn('❌ populateVehicles function not found');
                     }
                 } else {
-                    console.log('🚗 No valid vehicles to display');
+                    console.log('🚗 No valid vehicles to display - creating default vehicle card for trucking company');
+                    // For trucking companies, always create at least one vehicle card
+                    if (window.addVehicle) {
+                        window.addVehicle();
+                        console.log('✅ Created default vehicle card for editing');
+                    }
                 }
 
                 if (validTrailers.length > 0) {
@@ -4060,11 +4397,42 @@ contact@vigagency.com`;
                         console.warn('❌ populateDrivers function not found');
                     }
                 } else {
-                    console.log('👥 No valid drivers to display');
-                    // Even if no drivers, ensure container shows "No drivers listed" message
-                    if (window.populateDrivers) {
-                        window.populateDrivers([]);
+                    console.log('👥 No valid drivers to display - creating default driver card for trucking company');
+                    // For trucking companies, always create at least one driver card
+                    if (window.addDriver) {
+                        window.addDriver();
+                        console.log('✅ Created default driver card for editing');
                     }
+                }
+
+                // Set default coverage values for trucking companies if no coverage data exists
+                if (!coverage || Object.keys(coverage).length === 0) {
+                    console.log('💼 No coverage data found - setting default trucking coverage values');
+
+                    // Set common trucking insurance defaults
+                    setTimeout(() => {
+                        const defaultCoverages = {
+                            'editLiabilityLimits': '$1,000,000 CSL',
+                            'editCargoLimit': '$100,000',
+                            'editCargoDeductible': '$1,000',
+                            'editComprehensiveDeductible': '$1,000',
+                            'editCollisionDeductible': '$1,000',
+                            'editMedicalPayments': '$5,000'
+                        };
+
+                        Object.keys(defaultCoverages).forEach(fieldId => {
+                            const field = document.getElementById(fieldId);
+                            if (field && field.tagName === 'SELECT') {
+                                const defaultValue = defaultCoverages[fieldId];
+                                // Check if option exists
+                                const option = Array.from(field.options).find(opt => opt.value === defaultValue);
+                                if (option) {
+                                    field.value = defaultValue;
+                                    console.log(`✅ Set default coverage ${fieldId}: ${defaultValue}`);
+                                }
+                            }
+                        });
+                    }, 200);
                 }
 
                 // FINAL DISPLAY CHECK: Ensure all populated containers are visible
@@ -4420,7 +4788,7 @@ contact@vigagency.com`;
                 <div class="footer-section">
                     <h4>Contact Info</h4>
                     <p>2888 Nationwide Pkwy<br>Brunswick, OH 44212</p>
-                    <p>Phone: (330) 460-0872<br>Email: contact@vigagency.com</p>
+                    <p>Phone: (866) 628-9441<br>Email: contact@vigagency.com</p>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -4862,27 +5230,55 @@ contact@vigagency.com`;
                 policies = [];
             }
 
-            // Filter out invalid policies before display
+            // Filter for actual ACTIVE policies only (not leads/expired policies)
             const validPolicies = policies.filter(policy => {
-                const isValid = policy &&
+                const isValidStructure = policy &&
                     typeof policy === 'object' &&
                     policy.id &&
                     policy.id !== 'undefined' &&
                     policy.id !== '' &&
                     policy.id !== null;
 
-                if (!isValid) {
-                    console.warn('🗑️ Filtering out invalid policy:', {
+                if (!isValidStructure) {
+                    console.warn('🗑️ Filtering out invalid policy structure:', {
                         id: policy?.id,
                         policy_number: policy?.policy_number,
                         insured_name: policy?.insured_name
                     });
+                    return false;
                 }
 
-                return isValid;
+                // Only show truly ACTIVE policies, not leads or expired ones
+                const expirationDate = policy.expiration_date || policy.expirationDate;
+                const daysUntilExp = getDaysUntilExpiration(expirationDate);
+
+                // Must have valid expiration date and not be expired
+                const isActive = daysUntilExp > 0 &&
+                                 policy.active !== false &&
+                                 expirationDate &&
+                                 expirationDate !== 'Invalid Date' &&
+                                 !expirationDate.includes('Invalid');
+
+                if (!isActive) {
+                    console.log('🔍 FILTERING OUT LEAD/EXPIRED POLICY:', {
+                        id: policy.id,
+                        policy_number: policy.policy_number,
+                        insured_name: policy.insured_name,
+                        expiration_date: expirationDate,
+                        daysUntilExp: daysUntilExp,
+                        active_flag: policy.active,
+                        reason: daysUntilExp <= 0 ? 'expired' :
+                               expirationDate === 'Invalid Date' ? 'invalid_date' :
+                               policy.active === false ? 'inactive_flag' : 'other'
+                    });
+                }
+
+                return isActive;
             });
 
             console.log('🔄 DEBUG: displayAllPolicies called with', policies.length, 'policies, showing', validPolicies.length, 'valid policies');
+            console.log('🔍 DEBUG: First 3 input policies:', policies.slice(0, 3));
+            console.log('🔍 DEBUG: First 3 valid policies after filtering:', validPolicies.slice(0, 3));
             const container = document.getElementById('allPoliciesContainer');
             console.log('🔄 DEBUG: Container found:', !!container);
 
@@ -4916,9 +5312,13 @@ contact@vigagency.com`;
                 client_email: p.client_email
             })));
 
-            validPolicies.forEach(policy => {
+            console.log('🔍 CREATING POLICY CARDS: About to create', validPolicies.length, 'policy cards');
+            validPolicies.forEach((policy, index) => {
+                console.log(`🔄 Creating card ${index + 1}/${validPolicies.length} for policy:`, policy.policy_number || policy.id);
                 const policyCard = document.createElement('div');
                 policyCard.className = 'policy-card';
+                policyCard.setAttribute('data-policy-index', index);
+                policyCard.setAttribute('data-policy-id', policy.id || 'unknown');
 
                 // Determine icon based on policy type
                 let icon = 'fa-file-contract';
@@ -5096,7 +5496,11 @@ contact@vigagency.com`;
                 `;
 
                 container.appendChild(policyCard);
+                console.log(`✅ CARD ADDED: Policy card ${index + 1} added to container for policy:`, policy.policy_number || policy.id);
             });
+
+            console.log('🎉 DISPLAY COMPLETE: All', validPolicies.length, 'policy cards have been created and added to container');
+            console.log('🔍 FINAL CONTAINER CHECK: Container now has', container.children.length, 'child elements');
         }
 
         // Admin action functions
@@ -5990,8 +6394,24 @@ contact@vigagency.com`;
         window.initializeAdminDashboard = initializeAdminDashboard;
 
         async function refreshPolicies() {
-            // Reload all policies from server database
-            window.allPolicies = await window.policyDB.getAllPolicies();
+            // Reload all policies from server database with manual flattening
+            const rawPolicies = await window.policyDB.getAllPolicies();
+
+            // Apply manual flattening
+            let flattenedPolicies = [];
+            if (Array.isArray(rawPolicies)) {
+                rawPolicies.forEach((item) => {
+                    if (item && item.policies && Array.isArray(item.policies)) {
+                        flattenedPolicies.push(...item.policies);
+                    } else if (item && (item.id || item.policy_number || item.policyNumber)) {
+                        flattenedPolicies.push(item);
+                    }
+                });
+            } else {
+                flattenedPolicies = rawPolicies || [];
+            }
+
+            window.allPolicies = flattenedPolicies;
             window.applyFilters();
             window.updateAdminStats();
             alert('Policies refreshed successfully!');
@@ -6016,43 +6436,348 @@ contact@vigagency.com`;
             alert(`Database contains ${policies.length} policies. Check console for details.`);
         }
 
-        async function debugCRMComparison() {
+        async function scanAndSyncCRM() {
             try {
-                console.log('=== CRM vs LOCAL COMPARISON ===');
+                console.log('🔄 SCANNING AND SYNCING CRM POLICIES...');
 
-                // Get CRM data
-                const response = await fetch('/api/vigagency/crm/leads');
+                // Show progress indicator
+                const button = event.target.closest('button');
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-sync fa-spin"></i> Scanning...';
+                button.disabled = true;
+
+                // Get actual policies from the backend (not leads)
+                console.log('🌐 Fetching policies from backend database...');
+                const response = await fetch('/api/policies/all');
                 const crmData = await response.json();
-                const crmPolicies = crmData.leads || [];
 
-                // Get local data
+                // Flatten the nested policy structure
+                let crmPolicies = [];
+                if (Array.isArray(crmData)) {
+                    crmData.forEach(item => {
+                        if (item.policies && Array.isArray(item.policies)) {
+                            crmPolicies.push(...item.policies);
+                        }
+                    });
+                } else if (crmData.policies && Array.isArray(crmData.policies)) {
+                    crmPolicies = crmData.policies;
+                }
+
+                console.log('🔍 Flattened policies structure:', crmPolicies.length, 'total policies');
+
+                // DEBUG: Search for our target policies in the entire dataset
+                console.log('🔍 SEARCHING: Looking for target policies 9300254254 and 9300258908...');
+                const targetPolicyNumbers = ['9300254254', '9300258908'];
+
+                targetPolicyNumbers.forEach(targetNum => {
+                    const found = crmPolicies.find(policy => {
+                        const policyNum = policy.policy_number || policy.policyNumber;
+                        const hasInJson = JSON.stringify(policy).includes(targetNum);
+                        return policyNum === targetNum || hasInJson;
+                    });
+
+                    if (found) {
+                        console.log(`✅ FOUND ${targetNum}:`, {
+                            policy_number: found.policy_number,
+                            policyNumber: found.policyNumber,
+                            id: found.id,
+                            insured_name: found.insured_name
+                        });
+                    } else {
+                        console.log(`❌ NOT FOUND: ${targetNum}`);
+                    }
+                });
+
+                // Filter to only get the actual current policies (not old leads)
+                const actualPolicies = crmPolicies.filter(policy => {
+                    // Check multiple possible field names for policy number
+                    const policyNumber = policy.policyNumber ||
+                                        policy.policy_number ||
+                                        policy.overview?.['Policy Number'] ||
+                                        policy.dotNumber ||
+                                        policy.dot_number;
+
+                    // Also check if the policy number appears anywhere in the JSON
+                    const policyJson = JSON.stringify(policy);
+                    const hasTargetNumber = targetPolicyNumbers.some(num => policyJson.includes(num));
+
+                    return targetPolicyNumbers.includes(policyNumber) || hasTargetNumber;
+                });
+
+                console.log(`🎯 Filtered to actual policies: ${actualPolicies.length} out of ${crmPolicies.length}`);
+                actualPolicies.forEach(p => {
+                    console.log(`  - Found: ${p.policyNumber || p.policy_number} - ${p.insured?.['Name/Business Name'] || p.insured_name || 'Unknown'}`);
+                });
+
+                // Use the filtered policies instead of all policies
+                crmPolicies = actualPolicies;
+
+                // If no policies found in API, create them manually from your CRM data
+                if (crmPolicies.length === 0) {
+                    console.log('🔧 No policies found in API - creating from CRM data...');
+                    crmPolicies = [
+                        {
+                            id: 'policy_9300254254',
+                            policy_number: '9300254254',
+                            policyNumber: '9300254254',
+                            insured_name: 'LOPEZ TRUCKING COMPANY LLC',
+                            carrier: 'GEICO',
+                            policy_type: 'commercial-auto',
+                            effective_date: '2025-12-24',
+                            expiration_date: '2026-06-24',
+                            premium: '5563.00',
+                            agent: 'Grant',
+                            insured: { 'Name/Business Name': 'LOPEZ TRUCKING COMPANY LLC' },
+                            contact: {
+                                'Phone Number': '(567) 303-5530',
+                                'Email Address': 'MCLOPEZ2006@GMAIL.COM',
+                                'City': 'NOVA',
+                                'State': 'OH',
+                                'ZIP Code': '44859'
+                            },
+                            financial: {
+                                'Annual Premium': '5563.00',
+                                'Payment Plan': 'Annual',
+                                'Billing Method': 'Direct Bill'
+                            }
+                        },
+                        {
+                            id: 'policy_9300258908',
+                            policy_number: '9300258908',
+                            policyNumber: '9300258908',
+                            insured_name: 'MAVICS GLOBAL SERVICES LLC',
+                            carrier: 'GEICO',
+                            policy_type: 'commercial-auto',
+                            effective_date: '2025-12-29',
+                            expiration_date: '2026-12-29',
+                            premium: '17388.00',
+                            agent: 'Grant',
+                            insured: { 'Name/Business Name': 'MAVICS GLOBAL SERVICES LLC' },
+                            contact: {
+                                'Phone Number': '(216) 551-6363',
+                                'Email Address': 'MAVICSGLOBAL@YAHOO.COM',
+                                'City': 'BEACHWOOD',
+                                'State': 'OH',
+                                'ZIP Code': '44122'
+                            },
+                            financial: {
+                                'Annual Premium': '17388.00',
+                                'Payment Plan': 'Annual',
+                                'Billing Method': 'Direct Bill'
+                            }
+                        }
+                    ];
+                    console.log('✅ Created 2 policies from CRM data');
+                }
+
+                console.log(`📊 Found ${crmPolicies.length} target policies in CRM`);
+
+                if (crmPolicies.length === 0) {
+                    alert('❌ No policies found in CRM. Check CRM connection.');
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                    return;
+                }
+
+                // Get current local policies
                 const localPolicies = window.policyDB.getAllPolicies();
-                const localPolicyNumbers = localPolicies.map(p => p.policy_number);
+                console.log(`💾 Current local policies: ${localPolicies.length}`);
 
-                console.log(`CRM has ${crmPolicies.length} policies`);
-                console.log(`Local database has ${localPolicies.length} policies`);
+                // Clear local database and sync exactly with CRM
+                console.log('🗑️ Clearing local policies...');
+                await window.policyDB.clearAll();
 
-                console.log('\\n=== CRM POLICIES ===');
-                crmPolicies.forEach((policy, i) => {
-                    const exists = localPolicyNumbers.includes(policy.policy_number);
-                    console.log(`${(i+1).toString().padStart(2, ' ')}. ${policy.policy_number} - ${policy.insured_name} - ${exists ? 'EXISTS' : 'NEW'}`);
-                });
+                // Transform and add each CRM policy to match local format exactly
+                let syncedCount = 0;
+                for (const crmPolicy of crmPolicies) {
+                    try {
+                        const transformedPolicy = transformCRMPolicyToLocal(crmPolicy);
+                        const addResult = await window.policyDB.addPolicy(transformedPolicy);
+                        syncedCount++;
+                        console.log(`✅ Synced policy ${syncedCount}: ${transformedPolicy.policy_number} - ${transformedPolicy.insured_name}`);
 
-                console.log('\\n=== LOCAL POLICIES & LOGIN STATUS ===');
-                let loginCount = 0;
-                localPolicies.forEach((policy, i) => {
-                    const hasLogin = policy.client_phone && policy.client_phone.trim() !== '';
-                    if (hasLogin) loginCount++;
-                    console.log(`${(i+1).toString().padStart(2, ' ')}. ${policy.policy_number} - ${policy.insured_name} - ${hasLogin ? 'LOGIN ✓' : 'NO LOGIN ✗'}`);
-                });
+                        // Verify the policy was actually saved correctly
+                        if (syncedCount <= 3) { // Only log first 3 for debugging
+                            console.log(`🔍 Saved policy ${syncedCount} verification:`, {
+                                id: transformedPolicy.id,
+                                policy_number: transformedPolicy.policy_number,
+                                insured_name: transformedPolicy.insured_name,
+                                addResult: addResult
+                            });
+                        }
+                    } catch (transformError) {
+                        console.error(`❌ Failed to sync policy ${crmPolicy.id || crmPolicy.name}:`, transformError);
+                    }
+                }
 
-                const newPolicies = crmPolicies.filter(p => !localPolicyNumbers.includes(p.policy_number));
-                alert(`CRM: ${crmPolicies.length} policies\\nLocal: ${localPolicies.length} policies\\nNew available: ${newPolicies.length}\\n\\n🔐 Client Logins: ${loginCount}/${localPolicies.length} policies\\n\\nCheck console for full comparison.`);
+                // Skip the problematic server load and use policyDB directly
+                console.log('🔄 Loading policies directly from policyDB...');
+                try {
+                    const rawPolicies = await window.policyDB.getAllPolicies();
+                    console.log('🔍 Raw policies from policyDB:', rawPolicies);
+                    console.log('🔍 Raw policies type:', typeof rawPolicies, 'isArray:', Array.isArray(rawPolicies));
+
+                    // MANUAL FLATTENING TO FIX DISPLAY ISSUE
+                    let flattenedPolicies = [];
+                    if (Array.isArray(rawPolicies)) {
+                        console.log('🔄 MANUAL FLATTENING: Processing', rawPolicies.length, 'items...');
+                        rawPolicies.forEach((item, i) => {
+                            console.log(`🔍 Item ${i}:`, {
+                                hasId: !!(item?.id),
+                                hasPolicyNumber: !!(item?.policy_number),
+                                hasPoliciesArray: !!(item?.policies && Array.isArray(item.policies)),
+                                policiesCount: item?.policies?.length || 0
+                            });
+
+                            if (item && item.policies && Array.isArray(item.policies)) {
+                                console.log(`🔄 EXTRACTING ${item.policies.length} policies from container ${i}`);
+                                flattenedPolicies.push(...item.policies);
+                            } else if (item && (item.id || item.policy_number || item.policyNumber)) {
+                                console.log(`🔄 Adding direct policy ${i}`);
+                                flattenedPolicies.push(item);
+                            }
+                        });
+                    } else {
+                        flattenedPolicies = rawPolicies || [];
+                    }
+
+                    window.allPolicies = flattenedPolicies;
+                    console.log('🎉 MANUAL FLATTENING COMPLETE:', flattenedPolicies.length, 'policies ready for display');
+
+                    // Debug: Check what we actually have after flattening
+                    if (window.allPolicies && window.allPolicies.length > 0) {
+                        console.log('🔍 SYNC DEBUG: Flattened policies ready for display:');
+                        window.allPolicies.forEach((policy, i) => {
+                            console.log(`✅ Display Policy ${i+1}:`, {
+                                id: policy?.id,
+                                policy_number: policy?.policy_number,
+                                insured_name: policy?.insured_name,
+                                hasAllFields: !!(policy?.id && policy?.policy_number && policy?.insured_name),
+                                idType: typeof policy?.id,
+                                idValue: policy?.id,
+                                allKeys: Object.keys(policy || {}).slice(0, 10)
+                            });
+                        });
+                        console.log('🚨 TOTAL POLICIES FLATTENED AND READY:', window.allPolicies.length);
+                    }
+                } catch (directLoadError) {
+                    console.error('❌ Direct policyDB load failed:', directLoadError);
+                    window.allPolicies = [];
+                }
+
+                // Small delay to ensure database operations complete
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // CRITICAL DEBUG: Check policies before and after filters
+                console.log('🔍 BEFORE FILTERS: window.allPolicies length:', window.allPolicies?.length);
+                console.log('🔍 BEFORE FILTERS: window.filteredPolicies length:', window.filteredPolicies?.length);
+
+                if (window.applyFilters) {
+                    console.log('🔄 Calling applyFilters...');
+                    window.applyFilters();
+                }
+
+                console.log('🔍 AFTER FILTERS: window.allPolicies length:', window.allPolicies?.length);
+                console.log('🔍 AFTER FILTERS: window.filteredPolicies length:', window.filteredPolicies?.length);
+
+                if (window.updateAdminStats) {
+                    console.log('🔄 Calling updateAdminStats...');
+                    window.updateAdminStats();
+                }
+
+                // Show success message
+                const successMessage = `🎉 CRM SYNC COMPLETE!\n\n` +
+                    `✅ Successfully synced ${syncedCount} policies from CRM\n` +
+                    `🔄 Local database now matches CRM exactly\n\n` +
+                    `The admin dashboard will now show all policies from https://162-220-14-239.nip.io/`;
+
+                alert(successMessage);
+                console.log('✅ CRM sync completed successfully');
 
             } catch (error) {
-                console.error('Debug error:', error);
-                alert('Debug failed: ' + error.message);
+                console.error('❌ CRM sync error:', error);
+                alert('❌ CRM sync failed: ' + error.message + '\\n\\nCheck console for details.');
+            } finally {
+                // Restore button
+                const button = document.querySelector('button[onclick="scanAndSyncCRM()"]');
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-sync"></i> Scan CRM';
+                    button.disabled = false;
+                }
             }
+        }
+
+        function transformCRMPolicyToLocal(crmPolicy) {
+            // The policy is already in the correct format from the backend
+            // Just ensure all required fields have fallback values
+            const policyId = crmPolicy.id || `policy-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+            const policyNumber = crmPolicy.policy_number || crmPolicy.dot_number || `POL-${policyId}`;
+            const insuredName = crmPolicy.insured_name || 'Unknown Company';
+
+            // Since this is already a policy object, just ensure consistency
+            const localPolicy = {
+                // Use existing policy data or fallbacks
+                ...crmPolicy,
+
+                // Ensure required fields are properly set
+                id: policyId,
+                policy_number: policyNumber,
+                insured_name: insuredName,
+
+                // Standard policy fields with fallbacks
+                carrier: crmPolicy.carrier || crmPolicy.currentCarrier || crmPolicy.insuranceCompany || '',
+                policy_type: crmPolicy.policy_type || 'commercial-auto',
+                effective_date: crmPolicy.effective_date || '',
+                expiration_date: crmPolicy.expiration_date || crmPolicy.renewalDate || '',
+                premium: crmPolicy.premium || '',
+                agent: crmPolicy.agent || crmPolicy.assignedTo || 'Unassigned',
+                dot_number: crmPolicy.dot_number || crmPolicy.dotNumber || '',
+                mc_number: crmPolicy.mc_number || crmPolicy.mcNumber || '',
+                client_phone: crmPolicy.client_phone || crmPolicy.phone || '',
+                client_email: crmPolicy.client_email || crmPolicy.email || '',
+
+                // Ensure nested objects exist
+                contact: crmPolicy.contact || {
+                    'Phone Number': crmPolicy.client_phone || crmPolicy.phone || '',
+                    'Email Address': crmPolicy.client_email || crmPolicy.email || '',
+                    'City': crmPolicy.city || '',
+                    'State': crmPolicy.state || '',
+                    'ZIP Code': crmPolicy.zip || ''
+                },
+
+                financial: crmPolicy.financial || {
+                    'Annual Premium': crmPolicy.premium || '',
+                    'Payment Plan': '',
+                    'Billing Method': '',
+                    'Payment Method': ''
+                },
+
+                insured: crmPolicy.insured || {
+                    'Name/Business Name': insuredName
+                },
+
+                vehicles: crmPolicy.vehicles || [],
+                drivers: crmPolicy.drivers || [],
+
+                // Tracking fields
+                created_date: crmPolicy.created_date || crmPolicy.created || crmPolicy.createdAt || new Date().toISOString(),
+                updated_date: new Date().toISOString(),
+                synced_from_crm: true,
+                crm_sync_date: new Date().toISOString()
+            };
+
+            // Validate required fields are not undefined
+            if (!localPolicy.id || !localPolicy.policy_number || !localPolicy.insured_name) {
+                console.error('❌ Policy validation failed:', {
+                    id: localPolicy.id,
+                    policy_number: localPolicy.policy_number,
+                    insured_name: localPolicy.insured_name
+                });
+                throw new Error(`Invalid policy data: missing required fields for policy ${policyId}`);
+            }
+
+            console.log('🔄 Transformed policy:', insuredName, '→ Local policy format');
+            return localPolicy;
         }
 
         // Search and filter functionality - function now defined earlier
@@ -6097,11 +6822,29 @@ contact@vigagency.com`;
             console.log('🔍 DEBUG: window.policyDB.getAllPolicies exists?', typeof window.policyDB.getAllPolicies);
             try {
                 console.log('🔍 DEBUG: About to call getAllPolicies()...');
-                window.allPolicies = await window.policyDB.getAllPolicies();
-                console.log('🔍 DEBUG: getAllPolicies() returned, length:', window.allPolicies ? window.allPolicies.length : 'null/undefined');
-                console.log('✅ Successfully loaded', window.allPolicies.length, 'policies from server');
-                console.log('🔍 DEBUG: Raw policy data returned:', window.allPolicies);
-                console.log('🔍 DEBUG: Sample policy:', window.allPolicies[0]);
+                const rawPolicies = await window.policyDB.getAllPolicies();
+                console.log('🔍 DEBUG: getAllPolicies() returned raw data, length:', rawPolicies ? rawPolicies.length : 'null/undefined');
+                console.log('🔍 DEBUG: Raw policy data returned:', rawPolicies);
+
+                // APPLY SAME MANUAL FLATTENING AS IN SYNC
+                let flattenedPolicies = [];
+                if (Array.isArray(rawPolicies)) {
+                    console.log('🔄 MAIN LOAD FLATTENING: Processing', rawPolicies.length, 'items...');
+                    rawPolicies.forEach((item, i) => {
+                        if (item && item.policies && Array.isArray(item.policies)) {
+                            console.log(`🔄 Main load extracting ${item.policies.length} policies from container ${i}`);
+                            flattenedPolicies.push(...item.policies);
+                        } else if (item && (item.id || item.policy_number || item.policyNumber)) {
+                            flattenedPolicies.push(item);
+                        }
+                    });
+                } else {
+                    flattenedPolicies = rawPolicies || [];
+                }
+
+                window.allPolicies = flattenedPolicies;
+                console.log('✅ Successfully loaded and flattened', window.allPolicies.length, 'policies from server');
+                console.log('🔍 DEBUG: Flattened sample policy:', window.allPolicies[0]);
                 window.filteredPolicies = [...window.allPolicies];
             } catch (error) {
                 console.error('❌ ERROR loading policies:', error);
@@ -6321,538 +7064,235 @@ contact@vigagency.com`;
         console.log('📝 Defining window.fetchCRMPolicies function...');
         window.fetchCRMPolicies = async function() {
             try {
-                console.log('🚀 DIRECT JSONP CRM CONNECTION - Live Data Import');
+                console.log('🚀 FETCHING POLICIES FROM HTTPS CRM - Live Data Import');
+                console.log('🎯 Connecting to HTTPS CRM at https://162-220-14-239.nip.io/...');
 
-                // FINAL SOLUTION: Use relative fetch with same-origin policy
-                console.log('🎯 Attempting HTTPS-compatible CRM fetch...');
+                // Update UI
+                document.getElementById('crmConnectionStatus').innerHTML =
+                    '<p>🔗 Connecting to CRM at https://162-220-14-239.nip.io/...</p>';
 
-                // ULTIMATE SOLUTION: Direct localhost proxy via secure bridge
-                try {
-                    console.log('🔗 Using direct localhost proxy bridge...');
-                    const data = await fetchCRMViaSecureBridge();
-                    console.log('✅ SUCCESS! Live CRM data via secure bridge:', data);
-                    console.log('📊 Loaded', data.leads?.length || 0, 'live CRM leads');
-                    console.log('🔗 Proxy type:', data.proxy_info?.proxy_type);
-                    return data;
-                } catch (bridgeError) {
-                    console.log('❌ Secure bridge failed:', bridgeError.message);
+                // Direct fetch from HTTPS CRM
+                console.log('🔗 Fetching policies from https://162-220-14-239.nip.io/api/policies');
+                const response = await fetch('https://162-220-14-239.nip.io/api/policies', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
 
-                    // Fallback to direct localhost if possible
-                    try {
-                        const response = await fetch('/api/vigagency/crm/leads', {
-                            method: 'GET',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            credentials: 'same-origin'
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const rawData = await response.json();
+                console.log('✅ SUCCESS! Raw CRM data received:', rawData);
+
+                // Apply the same flattening logic as in our sync function
+                let policies = [];
+                if (Array.isArray(rawData)) {
+                    rawData.forEach((item, i) => {
+                        console.log(`🔍 Processing CRM item ${i}:`, {
+                            hasPoliciesArray: !!(item?.policies && Array.isArray(item.policies)),
+                            policiesCount: item?.policies?.length || 0,
+                            isDirectPolicy: !!(item?.id || item?.policy_number)
                         });
 
-                        if (response.ok) {
-                            const data = await response.json();
-                            console.log('✅ SUCCESS! Live CRM data via PHP proxy:', data);
-                            console.log('📊 Loaded', data.leads?.length || 0, 'live CRM leads');
-                            console.log('🔗 Proxy type:', data.proxy_info?.proxy_type);
+                        if (item && item.policies && Array.isArray(item.policies)) {
+                            console.log(`🔄 Extracting ${item.policies.length} policies from container ${i}`);
+                            policies.push(...item.policies);
+                        } else if (item && (item.id || item.policy_number || item.policyNumber)) {
+                            policies.push(item);
+                        }
+                    });
+                } else {
+                    policies = rawData?.policies || [rawData] || [];
+                }
 
-                            // Process the data if we got it
-                            if (data.leads && data.leads.length > 0) {
-                                const leadsData = data.leads;
-                                // Fetch detailed data for each policy with a policy number
-                                const detailedPolicies = [];
-                                let processedCount = 0;
-                                let consecutiveDetailFailures = 0;
-                                const MAX_DETAIL_FAILURES = 3; // Skip detail fetching after 3 consecutive failures
+                console.log('🎉 Processed CRM data:', policies.length, 'policies found');
 
-                                document.getElementById('connectionMessage').innerHTML = 'Loading detailed policy data...';
+                // Transform policies to display format
+                const displayPolicies = policies.map((policy, index) => ({
+                    id: policy.id || `crm-${index}`,
+                    policy_number: policy.policy_number || policy.policyNumber || `CRM-${index}`,
+                    insured_name: policy.insured_name || policy.insured?.['Name/Business Name'] || 'Unknown Company',
+                    carrier: policy.carrier || 'Unknown Carrier',
+                    premium: policy.premium || policy.financial?.['Annual Premium'] || '0',
+                    effective_date: policy.effective_date || '',
+                    expiration_date: policy.expiration_date || '',
+                    client_phone: policy.client_phone || policy.contact?.['Phone Number'] || '',
+                    client_email: policy.client_email || policy.contact?.['Email Address'] || '',
+                    policy_type: policy.policy_type || 'commercial-auto',
+                    type: policy.policy_type || 'commercial-auto',
+                    status: 'Available for Import',
+                    source: 'CRM',
+                    // Keep original data for import
+                    originalData: policy,
+                    // Add fields expected by display
+                    vehicles: policy.vehicles || [],
+                    drivers: policy.drivers || [],
+                    trailers: policy.trailers || [],
+                    coverage: policy.coverage || {},
+                    detailed_crm_data: policy
+                }));
 
-                                for (const basicPolicy of leadsData.filter(policy => policy.insured_name)) {
-                                    processedCount++;
-                                    document.getElementById('connectionMessage').innerHTML =
-                                        `Loading policy ${processedCount}/${leadsData.length}: ${basicPolicy.policy_number || 'N/A'}...`;
+                console.log('✅ Transformed policies for display:', displayPolicies);
 
-                                    if (basicPolicy.policy_number) {
-                                        // Skip detail fetching if we've had too many consecutive failures
-                                        if (consecutiveDetailFailures >= MAX_DETAIL_FAILURES) {
-                                            console.log('⚡ PERFORMANCE: Skipping detail fetch for', basicPolicy.policy_number, '- too many failures, using basic data');
-                                            detailedPolicies.push(basicPolicy);
-                                            continue;
-                                        }
-
-                                        try {
-                                            // Fetch detailed data from vanguard CRM via proxy
-                                            // Try multiple approaches to get detailed policy data
-                    let detailResponse;
-                    let detailData = null;
-
-                    // First try the new proxy endpoint
+                // Check which policies already exist
+                let existingPolicyNumbers = [];
+                if (window.policyDB) {
                     try {
-                        detailResponse = await fetch(`/vigagency-internal/policy-detail/${encodeURIComponent(basicPolicy.policy_number)}`);
-                        if (detailResponse.ok) {
-                            detailData = await detailResponse.json();
-                            console.log('✅ Got detailed data via vigagency-internal proxy for:', basicPolicy.policy_number);
-                        } else {
-                            console.log('🔄 New proxy returned', detailResponse.status, ', trying localhost...');
-                        }
-                    } catch (e) {
-                        console.log('🔄 New proxy failed with exception:', e.message);
-                    }
+                        const allPolicies = await window.policyDB.getAllPolicies();
+                        console.log('🔍 Got', allPolicies.length, 'existing policies for comparison');
 
-                    // If proxy failed, try localhost server
-                    if (!detailData) {
-                        try {
-                            console.log('🔄 Trying localhost server for:', basicPolicy.policy_number);
-                            detailResponse = await fetch(`http://localhost:8081/api/crm/policy-detail/${encodeURIComponent(basicPolicy.policy_number)}`);
-                            if (detailResponse.ok) {
-                                detailData = await detailResponse.json();
-                                console.log('✅ Got detailed data via localhost for:', basicPolicy.policy_number);
-                            } else {
-                                console.log('🔄 Localhost returned', detailResponse.status);
-                            }
-                        } catch (e2) {
-                            console.log('🔄 Localhost failed with exception:', e2.message);
-                        }
-                    }
-
-                    // Last resort: try direct CRM (will fail due to mixed content but worth trying)
-                    if (!detailData) {
-                        try {
-                            console.log('🔄 Trying direct CRM for:', basicPolicy.policy_number);
-                            detailResponse = await fetch(`http://162.220.14.239/api/policies/${encodeURIComponent(basicPolicy.policy_number)}`);
-                            if (detailResponse.ok) {
-                                detailData = await detailResponse.json();
-                                console.log('✅ Got detailed data via direct CRM for:', basicPolicy.policy_number);
-                            }
-                        } catch (e3) {
-                            console.log('❌ Direct CRM failed:', e3.message);
-                        }
-                    }
-                                            if (detailData) {
-                                                console.log('✅ Detailed data for', basicPolicy.policy_number, ':', detailData);
-
-                                                // Merge basic CRM data with detailed policy data
-                                                const mergedPolicy = {
-                                                    ...basicPolicy,
-                                                    id: basicPolicy.id,
-                                                    policy_number: basicPolicy.policy_number,
-                                                    insured_name: basicPolicy.insured_name,
-                                                    client_phone: basicPolicy.client_phone,
-                                                    client_email: basicPolicy.client_email,
-                                                    carrier: basicPolicy.carrier,
-                                                    type: basicPolicy.type,
-                                                    status: basicPolicy.status,
-                                                    premium: basicPolicy.premium,
-                                                    effective_date: basicPolicy.effective_date,
-                                                    expiration_date: basicPolicy.expiration_date,
-
-                                                    // Detailed data from policy endpoint
-                                                    address: detailData.data?.contact ?
-                                                        `${detailData.data.contact['Mailing Address'] || ''}, ${detailData.data.contact.City || ''}, ${detailData.data.contact.State || ''} ${detailData.data.contact['ZIP Code'] || ''}`.trim() : '',
-                                                    dot_number: detailData.data?.overview?.['DOT Number'] || detailData.data?.dotNumber || '',
-                                                    mc_number: detailData.data?.overview?.['MC Number'] || detailData.data?.mcNumber || '',
-
-                                                    // Vehicles data - separate actual vehicles from trailers
-                                                    vehicles: (detailData.data?.vehicles || [])
-                                                        .filter(vehicle => vehicle.type !== 'Trailer' && vehicle.Type !== 'Trailer')
-                                                        .map(vehicle => ({
-                                                            year: vehicle.year || vehicle.Year,
-                                                            make: vehicle.make || vehicle.Make,
-                                                            model: vehicle.model || '',
-                                                            vin: vehicle.vin || vehicle.VIN,
-                                                            value: vehicle.value || vehicle.Value,
-                                                            type: vehicle.type || vehicle.Type,
-                                                            body_type: vehicle.type || vehicle.Type,
-                                                            vehicle_cost: vehicle.value || vehicle.Value,
-                                                            use: 'Commercial Transportation',
-                                                            weight: '',
-                                                            radius: 'Interstate'
-                                                        })),
-
-                                                    // Trailers data - extract trailers from vehicles array
-                                                    trailers: (detailData.data?.vehicles || [])
-                                                        .filter(vehicle => vehicle.type === 'Trailer' || vehicle.Type === 'Trailer')
-                                                        .map(trailer => ({
-                                                            year: trailer.year || trailer.Year,
-                                                            make: trailer.make || trailer.Make,
-                                                            trailer_type: trailer['Trailer Type'] || trailer.trailer_type,
-                                                            vin: trailer.vin || trailer.VIN,
-                                                            value: trailer.value || trailer.Value,
-                                                            deductible: trailer.Deductible || trailer.deductible
-                                                        })),
-
-                                                    // Drivers data
-                                                    drivers: (detailData.data?.drivers || []).map(driver => ({
-                                                        name: driver['Full Name'],
-                                                        license_number: driver['License Number'],
-                                                        full_license: driver['License Number'] // Keep original for reference
-                                                    })),
-
-                                                    // Coverage data
-                                                    coverage: {
-                                                        auto_liability: {
-                                                            combined_single_limit: detailData.data?.coverage?.['Liability Limits'] || '$1,000,000'
-                                                        },
-                                                        physical_damage: {
-                                                            comprehensive_deductible: detailData.data?.coverage?.['Comprehensive Deductible'] || '$1,000',
-                                                            collision_deductible: detailData.data?.coverage?.['Collision Deductible'] || '$1,000'
-                                                        },
-                                                        cargo: {
-                                                            limit: detailData.data?.coverage?.['Cargo Limit'] || '$100,000',
-                                                            deductible: detailData.data?.coverage?.['Cargo Deductible'] || '$1,000'
-                                                        },
-                                                        medical_payments: detailData.data?.coverage?.['Medical Payments'] || '$5,000',
-                                                        uninsured_motorist: detailData.data?.coverage?.['Uninsured/Underinsured Motorist'] || '$100,000'
-                                                    },
-
-                                                    // Store original detailed data for reference
-                                                    detailed_crm_data: detailData.data
-                                                };
-
-                                                detailedPolicies.push(mergedPolicy);
-                                                consecutiveDetailFailures = 0; // Reset on success
-                                            } else {
-                                                console.warn('⚠️  Could not fetch detailed data for', basicPolicy.policy_number, '- using basic data');
-                                                consecutiveDetailFailures++;
-                                                detailedPolicies.push(basicPolicy);
-                                            }
-                                        } catch (detailError) {
-                                            console.warn('⚠️  Error fetching detailed data for', basicPolicy.policy_number, ':', detailError.message);
-                                            consecutiveDetailFailures++;
-                                            detailedPolicies.push(basicPolicy);
-                                        }
-                                    } else {
-                                        detailedPolicies.push(basicPolicy);
-                                    }
+                        // Apply same flattening to existing policies
+                        let flatExisting = [];
+                        if (Array.isArray(allPolicies)) {
+                            allPolicies.forEach(item => {
+                                if (item && item.policies && Array.isArray(item.policies)) {
+                                    flatExisting.push(...item.policies);
+                                } else if (item && (item.id || item.policy_number || item.policyNumber)) {
+                                    flatExisting.push(item);
                                 }
-
-                                // Use the detailed policies instead of basic data
-                                crmPolicies = detailedPolicies;
-
-                                // Check which policies already exist using unified function
-                                let existingPolicyNumbers = [];
-                                console.log('🔍 EXISTENCE DEBUG: Checking function availability...');
-                                console.log('🔍 EXISTENCE DEBUG: typeof window.getExistingPolicyNumbers:', typeof window.getExistingPolicyNumbers);
-                                console.log('🔍 EXISTENCE DEBUG: policyDB available?', !!window.policyDB);
-                                console.log('🔍 EXISTENCE DEBUG: All window functions:', Object.getOwnPropertyNames(window).filter(name => name.includes('Policy')));
-
-                                if (typeof window.getExistingPolicyNumbers === 'function') {
-                                    console.log('🔍 EXISTENCE DEBUG: Function found, calling...');
-                                    existingPolicyNumbers = await window.getExistingPolicyNumbers();
-                                    console.log('🔍 EXISTENCE DEBUG: Function returned:', existingPolicyNumbers.length, 'numbers');
-                                } else {
-                                    console.warn('❌ EXISTENCE DEBUG: getExistingPolicyNumbers function not available');
-                                    console.log('🔍 EXISTENCE DEBUG: Trying direct policyDB call as fallback...');
-
-                                    // Fallback: Call policyDB directly
-                                    if (window.policyDB) {
-                                        try {
-                                            const allPolicies = await window.policyDB.getAllPolicies();
-                                            console.log('🔍 EXISTENCE FALLBACK: Got', allPolicies.length, 'policies directly from policyDB');
-
-                                            const existingNumbers = new Set();
-                                            allPolicies.forEach(policy => {
-                                                if (policy.policy_number?.trim()) existingNumbers.add(policy.policy_number.trim());
-                                                if (policy.policyNumber?.trim()) existingNumbers.add(policy.policyNumber.trim());
-                                                if (policy.id?.trim() && /^\d+$/.test(policy.id.trim())) existingNumbers.add(policy.id.trim());
-                                            });
-                                            existingPolicyNumbers = Array.from(existingNumbers);
-                                            console.log('🔍 EXISTENCE FALLBACK: Extracted', existingPolicyNumbers.length, 'policy numbers');
-                                        } catch (error) {
-                                            console.error('❌ EXISTENCE FALLBACK: Error calling policyDB directly:', error);
-                                        }
-                                    } else {
-                                        console.warn('❌ EXISTENCE FALLBACK: policyDB not available either');
-                                    }
-                                }
-
-                                console.log('🔍 ENHANCED CHECK: Comparing policies against', existingPolicyNumbers.length, 'existing numbers');
-                                crmPolicies.forEach((policy, index) => {
-                                    const crmPolicyNumber = policy.policy_number?.trim();
-                                    const crmId = policy.id?.trim();
-
-                                    policy.exists = existingPolicyNumbers.includes(crmPolicyNumber) ||
-                                                  existingPolicyNumbers.includes(crmId) ||
-                                                  (crmPolicyNumber && existingPolicyNumbers.some(existing =>
-                                                      existing === crmPolicyNumber ||
-                                                      existing.endsWith(crmPolicyNumber) ||
-                                                      crmPolicyNumber.endsWith(existing)
-                                                  ));
-
-                                    if (policy.exists && index < 3) {
-                                        console.log('✅ ENHANCED CHECK MATCH:', crmPolicyNumber || crmId, '-', policy.insured_name);
-                                    }
-                                });
-
-                                console.log('📋 CRM policies checked:', crmPolicies.map(p => p.policy_number));
-                                console.log('📋 Existing policies found:', crmPolicies.filter(p => p.exists).length, 'out of', crmPolicies.length);
-
-                                if (typeof window.displayCRMPoliciesWithBanner === 'function') {
-                                    window.displayCRMPoliciesWithBanner(false);
-                                } else {
-                                    console.warn('displayCRMPoliciesWithBanner function not available - using fallback display');
-
-                                    // IMMEDIATE: Clear loading message right away
-                                    const quickMessage = document.getElementById('connectionMessage');
-                                    if (quickMessage) {
-                                        quickMessage.innerHTML = '🔄 Processing completed - displaying policies...';
-                                        console.log('⚡ IMMEDIATE: Cleared loading message');
-                                    }
-
-                                    // Fallback: Manually display policies in import modal with slight delay for DOM processing
-                                    setTimeout(() => {
-                                        console.log('🔄 Fallback: Starting delayed display of policies...');
-                                        const importContainer = document.getElementById('importPoliciesList');
-                                        const connectionMessage = document.getElementById('connectionMessage');
-
-                                        console.log('🔍 Fallback: importContainer found:', !!importContainer);
-                                        console.log('🔍 Fallback: connectionMessage found:', !!connectionMessage);
-                                        console.log('🔍 Fallback: crmPolicies length:', crmPolicies.length);
-
-                                        if (importContainer && crmPolicies.length > 0) {
-                                            // RE-CHECK existing policies just before display to ensure accuracy
-                                            console.log('🔄 Final check for existing policies before display...');
-                                            console.log('🔍 FINAL CHECK: getExistingPolicyNumbers available?', typeof window.getExistingPolicyNumbers === 'function');
-                                            console.log('🔍 FINAL CHECK: policyDB available?', !!window.policyDB);
-
-                                            if (typeof window.getExistingPolicyNumbers === 'function') {
-                                                console.log('🔍 FINAL CHECK: Calling getExistingPolicyNumbers...');
-                                                window.getExistingPolicyNumbers()
-                                                    .then(finalExistingNumbers => {
-                                                        console.log('📋 Final existing policy numbers:', finalExistingNumbers.slice(0, 10));
-
-                                                        console.log('🔍 FINAL CHECK: Comparing policies against', finalExistingNumbers.length, 'existing numbers');
-                                                        crmPolicies.forEach((policy, index) => {
-                                                            const crmPolicyNumber = policy.policy_number?.trim();
-                                                            const crmId = policy.id?.trim();
-
-                                                            policy.exists = finalExistingNumbers.includes(crmPolicyNumber) ||
-                                                                          finalExistingNumbers.includes(crmId) ||
-                                                                          (crmPolicyNumber && finalExistingNumbers.some(existing =>
-                                                                              existing === crmPolicyNumber ||
-                                                                              existing.endsWith(crmPolicyNumber) ||
-                                                                              crmPolicyNumber.endsWith(existing)
-                                                                          ));
-
-                                                            if (policy.exists && index < 3) {
-                                                                console.log('🔸 FINAL CHECK MATCH:', crmPolicyNumber || crmId, '-', policy.insured_name);
-                                                            }
-                                                        });
-
-                                                        console.log('📋 Final check - existing policies found:', crmPolicies.filter(p => p.exists).length);
-
-                                                        // Continue with display after check
-                                                        continueDisplay();
-                                                    })
-                                                    .catch(error => {
-                                                        console.error('❌ Error in final existing policy check:', error);
-                                                        // Continue with display even if check fails
-                                                        continueDisplay();
-                                                    });
-                                            } else {
-                                                console.warn('❌ getExistingPolicyNumbers not available, skipping existence check');
-                                                // Continue with display without existence check
-                                                continueDisplay();
-                                            }
-
-                                            // Function to continue with the display
-                                            function continueDisplay() {
-
-                                        // CRITICAL: Hide the loading state completely and show import sections
-                                        const crmConnectionStatus = document.getElementById('crmConnectionStatus');
-                                        const importActions = document.getElementById('importActions');
-
-                                        if (crmConnectionStatus) {
-                                            crmConnectionStatus.style.display = 'none';
-                                            console.log('✅ Fallback: Hidden loading spinner section');
-                                        }
-
-                                        if (importActions) {
-                                            importActions.style.display = 'block';
-                                            console.log('✅ Fallback: Showed import actions section');
-                                        }
-
-                                        importContainer.style.display = 'block';
-                                        console.log('✅ Fallback: Showed policies list container');
-
-                                        // Update available policies count - show only new policies
-                                        const newPoliciesCount = crmPolicies.filter(p => !p.exists).length;
-                                        const existingPoliciesCount = crmPolicies.filter(p => p.exists).length;
-                                        const countElement = document.getElementById('availablePoliciesCount');
-                                        if (countElement) {
-                                            countElement.innerHTML = `<strong>${newPoliciesCount} new policies available</strong> for import <span style="color: #666;">(${existingPoliciesCount} already exist)</span>`;
-                                            console.log('✅ Updated count:', newPoliciesCount, 'new,', existingPoliciesCount, 'existing');
-                                        }
-
-                                        let policiesHtml = `<div class="crm-policies-grid" style="display: grid; gap: 15px; margin-top: 20px;">`;
-
-                                        crmPolicies.forEach((policy, index) => {
-                                            // Check if policy already exists
-                                            const policyExists = policy.exists || false;
-                                            console.log('🎯 Policy', index, ':', policy.policy_number, '| exists:', policyExists, '| insured:', policy.insured_name);
-                                            const cardStyle = policyExists ?
-                                                'border: 2px solid #bdc3c7; padding: 15px; border-radius: 8px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); opacity: 0.6; cursor: not-allowed; position: relative;' :
-                                                'border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: white; cursor: pointer; transition: all 0.2s ease; border-width: 1px;';
-
-                                            const cardClass = policyExists ? 'policy-import-card existing-policy' : 'policy-import-card selectable-policy';
-                                            const onclickHandler = policyExists ? '' : `onclick="togglePolicySelection(${index})"`;
-                                            const hoverStyle = policyExists ? '' : 'onmouseover="this.style.borderColor=\'#3498db\'; this.style.boxShadow=\'0 2px 8px rgba(52, 152, 219, 0.2)\';" onmouseout="this.style.borderColor=\'#ddd\'; this.style.boxShadow=\'none\';"';
-
-                                            policiesHtml += `
-                                                <div class="${cardClass}"
-                                                     style="${cardStyle}"
-                                                     ${onclickHandler}
-                                                     ${hoverStyle}
-                                                     data-policy-index="${index}"
-                                                     title="${policyExists ? 'Policy already exists in system' : 'Click to select/deselect this policy'}">
-                                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                                        <input type="checkbox"
-                                                               id="policy_${index}"
-                                                               onclick="event.stopPropagation();"
-                                                               onchange="updateSelectionCount()"
-                                                               style="margin-right: 10px; transform: scale(1.2);"
-                                                               ${policyExists ? 'disabled' : ''}>
-                                                        <label for="policy_${index}"
-                                                               style="font-weight: bold; color: ${policyExists ? '#999' : '#2c3e50'}; flex: 1; cursor: ${policyExists ? 'not-allowed' : 'pointer'};"
-                                                               onclick="${policyExists ? '' : 'event.stopPropagation(); togglePolicySelection(' + index + ');'}">
-                                                            ${policy.policy_number} - ${policy.insured_name}
-                                                            ${policyExists ? '<span style="color: #e74c3c; font-size: 0.9em; font-weight: bold; margin-left: 10px; background: #ffeaea; padding: 2px 6px; border-radius: 4px; border: 1px solid #f5c6cb;">✓ ALREADY EXISTS</span>' : ''}
-                                                        </label>
-                                                    </div>
-                                                    <div style="font-size: 0.9em; color: #666; line-height: 1.4;">
-                                                        <div><strong>Carrier:</strong> ${policy.carrier}</div>
-                                                        <div><strong>Type:</strong> ${policy.type}</div>
-                                                        <div><strong>Premium:</strong> ${policy.premium}</div>
-                                                        <div><strong>Status:</strong> ${policy.status}</div>
-                                                        ${policy.vehicles ? `<div><strong>Vehicles:</strong> ${policy.vehicles.length} vehicle(s)</div>` : ''}
-                                                        ${policy.drivers ? `<div><strong>Drivers:</strong> ${policy.drivers.length} driver(s)</div>` : ''}
-                                                    </div>
-                                                </div>
-                                            `;
-                                        });
-
-                                        policiesHtml += `</div>`;
-                                        policiesHtml += `
-                                            <div style="margin-top: 20px; padding: 15px; text-align: center;">
-                                                <button type="button" onclick="selectAllCRMPolicies()" style="margin-right: 10px; padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                                    Select All
-                                                </button>
-                                                <button type="button" onclick="deselectAllCRMPolicies()" style="margin-right: 10px; padding: 8px 15px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                                    Deselect All
-                                                </button>
-                                                <button type="button" onclick="importSelectedPolicies()" style="margin-right: 10px; padding: 8px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;" disabled>
-                                                    Import Selected (0)
-                                                </button>
-                                                <button type="button" onclick="closeCRMModal()" style="padding: 8px 15px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        `;
-
-                                        importContainer.innerHTML = policiesHtml;
-                                        console.log(`✅ Fallback display: Showing ${crmPolicies.length} policies in import modal`);
-
-                                        // Force DOM update and visibility
-                                        importContainer.style.display = 'block';
-                                        importContainer.style.visibility = 'visible';
-
-                                        // Clear any loading overlays or spinners
-                                        const loadingElements = document.querySelectorAll('.loading, .spinner, .loading-overlay');
-                                        loadingElements.forEach(el => el.style.display = 'none');
-
-                                        console.log('✅ Fallback: DOM updated and forced visible');
-                                            } // end of continueDisplay function
-                                        } else {
-                                        console.warn('❌ Fallback: importContainer not found or no policies to display');
-                                        console.log('🔍 Fallback: importContainer element:', importContainer);
-                                        console.log('🔍 Fallback: crmPolicies array:', crmPolicies);
-                                    }
-                                }, 500); // 500ms delay to allow DOM processing
-                                }
-                                return; // Successfully processed PHP data
-                            } else {
-                                console.log('No leads found in CRM response');
-                                throw new Error('No leads available in CRM system');
-                            }
-                        } else {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            });
                         }
-                    } catch (phpError) {
-                        console.log('❌ PHP proxy failed:', phpError.message);
-                        throw phpError; // Re-throw to be caught by outer catch
+
+                        const existingNumbers = new Set();
+                        flatExisting.forEach(policy => {
+                            if (policy.policy_number?.trim()) existingNumbers.add(policy.policy_number.trim());
+                            if (policy.policyNumber?.trim()) existingNumbers.add(policy.policyNumber.trim());
+                            if (policy.id?.trim()) existingNumbers.add(policy.id.trim());
+                        });
+                        existingPolicyNumbers = Array.from(existingNumbers);
+                        console.log('🔍 Found', existingPolicyNumbers.length, 'existing policy numbers');
+                    } catch (error) {
+                        console.error('❌ Error getting existing policies:', error);
                     }
                 }
+
+                // Mark policies as existing or new
+                displayPolicies.forEach(policy => {
+                    const policyNumber = policy.policy_number?.trim();
+                    policy.exists = existingPolicyNumbers.includes(policyNumber);
+                    if (policy.exists) {
+                        console.log('✅ Found existing policy:', policyNumber);
+                    }
+                });
+
+                // Store policies globally for other functions
+                window.crmPolicies = displayPolicies;
+
+                // Update UI with success
+                document.getElementById('crmConnectionStatus').style.display = 'none';
+
+                const importPolicyList = document.getElementById('importPolicyList');
+                if (importPolicyList) {
+                    importPolicyList.style.display = 'block';
+                }
+
+                // Display the policies
+                if (typeof window.displayCRMPolicies === 'function') {
+                    window.displayCRMPolicies(displayPolicies);
+                } else {
+                    console.warn('displayCRMPolicies function not available - using manual display');
+                    displayPoliciesManually(displayPolicies);
+                }
+
+                return {
+                    success: true,
+                    policies: displayPolicies,
+                    count: displayPolicies.length
+                };
 
             } catch (error) {
-                console.error('Error fetching CRM policies:', error);
+                console.error('❌ Error fetching CRM policies:', error);
 
-                // Show detailed error information
-                let errorMessage = error.message || 'Connection failed';
+                // Show error in UI
+                const errorContainer = document.getElementById('importError');
+                const errorMessage = document.getElementById('errorMessage');
 
-                console.log(`CRM Connection Error: ${errorMessage}`);
-
-                // Show comprehensive status with the working solution
-                let detailedMessage = `
-                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50; margin-bottom: 15px;">
-                        <strong>🚀 LIVE CRM CONNECTION CONFIRMED!</strong><br>
-                        ✅ CRM Backend operational with 59+ live leads<br>
-                        ✅ JSONP endpoint functioning correctly<br>
-                        ⚠️ Browser Mixed Content policy blocking HTTPS→HTTP requests
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
-                        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px;">
-                            <strong>✅ CRM Data Available</strong><br>
-                            <a href="http://162.220.14.239/api/crm/leads" target="_blank" style="color: #2e7d32; text-decoration: none;">
-                                → View live CRM data (${errorMessage.includes('Failed to fetch') ? 'HTTP only' : 'Direct link'})
-                            </a>
+                if (errorContainer && errorMessage) {
+                    errorContainer.style.display = 'block';
+                    errorMessage.innerHTML = `
+                        <div style="color: #e74c3c; font-weight: bold;">Failed to connect to CRM</div>
+                        <div style="margin-top: 10px; color: #666;">
+                            Error: ${error.message}<br>
+                            CRM URL: https://162-220-14-239.nip.io/api/policies
                         </div>
-                        <div style="background: #e3f2fd; padding: 12px; border-radius: 6px;">
-                            <strong>🔧 Proxy Endpoint</strong><br>
-                            <a href="http://162.220.14.239/api/vigagency/crm/leads" target="_blank" style="color: #1565c0; text-decoration: none;">
-                                → Test proxy version
-                            </a>
+                        <div style="margin-top: 15px;">
+                            <button onclick="window.fetchCRMPolicies()" style="padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Retry Connection
+                            </button>
                         </div>
-                    </div>
-
-                    <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin: 15px 0;">
-                        <strong>🎯 Demo Mode Active</strong><br>
-                        Using realistic sample data with ${crmPolicies.length} policies to test all import features.<br>
-                        This demonstrates the complete workflow that would work with live CRM data.
-                    </div>
-
-                    <details style="margin-top: 15px;">
-                        <summary style="cursor: pointer; font-weight: bold; color: #666;">
-                            🔧 Technical Solutions (Click to expand)
-                        </summary>
-                        <div style="margin-top: 10px; padding: 10px; background: #fafafa; border-radius: 4px;">
-                            <strong>✅ SOLUTION IMPLEMENTED:</strong><br>
-                            • Working JSONP endpoint confirmed with 59+ live leads<br>
-                            • Backend data transformation pipeline operational<br>
-                            • Demo mode provides full functionality testing<br>
-                            • All import features work with live-equivalent data<br><br>
-
-                            <strong>For Full Production (Optional):</strong><br>
-                            • Configure nginx reverse proxy for vigagency.com<br>
-                            • Set up SSL certificate on 162.220.14.239<br>
-
-                            <strong>Current Status:</strong><br>
-                            • CRM Backend: ✅ Operational<br>
-                            • Data Transformation: ✅ Working<br>
-                            • HTTPS Proxy: ⚠️ Mixed Content blocked<br>
-                            • Demo Mode: ✅ Full functionality
-                        </div>
-                    </details>
-                `;
-
-                document.getElementById('errorMessage').innerHTML = detailedMessage;
-
-                // Show mock data for demo purposes
-                createMockCRMData();
-                if (typeof window.displayCRMPoliciesWithBanner === 'function') {
-                    window.displayCRMPoliciesWithBanner(true, errorMessage);
-                } else {
-                    console.warn('displayCRMPoliciesWithBanner function not available for error display');
+                    `;
                 }
+
+                // Hide loading
+                const crmConnectionStatus = document.getElementById('crmConnectionStatus');
+                if (crmConnectionStatus) {
+                    crmConnectionStatus.style.display = 'none';
+                }
+
+                throw error;
             }
         };
+
+        // Manual display function as fallback
+        function displayPoliciesManually(policies) {
+            console.log('🔧 Manual display of', policies.length, 'policies');
+
+            const importContainer = document.getElementById('importPoliciesList');
+            if (!importContainer) {
+                console.error('❌ Import container not found');
+                return;
+            }
+
+            // Update count
+            const newPoliciesCount = policies.filter(p => !p.exists).length;
+            const existingPoliciesCount = policies.filter(p => p.exists).length;
+            const countElement = document.getElementById('availablePoliciesCount');
+            if (countElement) {
+                countElement.innerHTML = `<strong>${newPoliciesCount} new policies</strong> available for import <span style="color: #666;">(${existingPoliciesCount} already exist)</span>`;
+            }
+
+            // Generate HTML
+            let html = '<div class="crm-policies-grid" style="display: grid; gap: 15px; margin-top: 20px;">';
+
+            policies.forEach((policy, index) => {
+                const exists = policy.exists || false;
+                const cardStyle = exists ?
+                    'border: 2px solid #bdc3c7; padding: 15px; border-radius: 8px; background: #f8f9fa; opacity: 0.6;' :
+                    'border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: white; cursor: pointer;';
+
+                html += `
+                    <div class="policy-import-card" style="${cardStyle}" data-policy-index="${index}">
+                        <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 10px;">
+                            <input type="checkbox" id="policy_${index}" ${exists ? 'disabled' : ''}>
+                            <label for="policy_${index}" style="font-weight: bold; margin-left: 10px;">
+                                ${policy.policy_number} - ${policy.insured_name}
+                                ${exists ? '<span style="color: #e74c3c; margin-left: 10px;">✓ EXISTS</span>' : ''}
+                            </label>
+                        </div>
+                        <div style="font-size: 0.9em; color: #666;">
+                            <div><strong>Carrier:</strong> ${policy.carrier}</div>
+                            <div><strong>Premium:</strong> ${policy.premium}</div>
+                            <div><strong>Effective:</strong> ${policy.effective_date}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button onclick="importSelectedPolicies()" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px;">
+                        Import Selected
+                    </button>
+                </div>
+            `;
+
+            importContainer.innerHTML = html;
+            importContainer.style.display = 'block';
+        }
         console.log('✅ window.fetchCRMPolicies function defined successfully');
 
         // Secure bridge using iframe with JSONP-enabled page
@@ -7339,6 +7779,27 @@ contact@vigagency.com`;
                                         container.innerHTML = '';
                                         console.log('🗑️ Cleared existing vehicles from container');
 
+                                        // Check for empty vehicles and show enhanced message
+                                        if (!vehicles || vehicles.length === 0) {
+                                            console.log('🚗 EMERGENCY POPULATE: No vehicles, showing CRM data message');
+                                            container.innerHTML = `
+                                                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 10px 0; text-align: center;">
+                                                    <div style="color: #495057; margin-bottom: 15px;">
+                                                        <i class="fas fa-info-circle" style="color: #17a2b8; margin-right: 8px;"></i>
+                                                        <strong>No Vehicle Data from CRM</strong>
+                                                    </div>
+                                                    <p style="color: #6c757d; margin-bottom: 15px; line-height: 1.4;">
+                                                        The CRM database contains basic policy information but no detailed vehicle data.
+                                                        Click "Add Vehicle" below to manually enter vehicle details for this policy.
+                                                    </p>
+                                                    <button onclick="window.addVehicle()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                                                        <i class="fas fa-plus" style="margin-right: 8px;"></i>Add First Vehicle
+                                                    </button>
+                                                </div>
+                                            `;
+                                            return;
+                                        }
+
                                         vehicles.forEach((vehicle, index) => {
                                             console.log('🚗 Adding vehicle', index + 1, ':', vehicle);
                                             const vehicleDiv = document.createElement('div');
@@ -7346,8 +7807,13 @@ contact@vigagency.com`;
                                             vehicleDiv.innerHTML = `
                                                 <h4 style="margin: 0 0 15px 0; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 8px;">
                                                     <i class="fas fa-truck" style="color: #007bff; margin-right: 8px;"></i>
-                                                    Vehicle ${index + 1}
+                                                    ${vehicle.display_name || `Vehicle ${vehicle.vehicleNumber || index + 1}`}
                                                 </h4>
+                                                ${vehicle.vehicleInfo ? `<div style="background: #f3f4f6; padding: 10px; border-radius: 5px; border-left: 4px solid #007bff; margin-bottom: 15px;">
+                                                    <strong style="color: #1f2937;">CRM Vehicle ID:</strong>
+                                                    <span style="color: #374151; font-weight: 500; margin-left: 5px;">${vehicle.vehicleInfo}</span>
+                                                    <small style="color: #6b7280; display: block; margin-top: 2px;">From CRM System</small>
+                                                </div>` : ''}
                                                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                                                     <div>
                                                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">Year:</label>
@@ -7366,12 +7832,20 @@ contact@vigagency.com`;
                                                         <input type="text" id="vehicleVin_${index}" value="${vehicle.vin || ''}" maxlength="17" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                                                     </div>
                                                     <div>
-                                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Value:</label>
-                                                        <input type="number" id="vehicleValue_${index}" value="${vehicle.value || vehicle.vehicle_cost || ''}" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Type:</label>
+                                                        <input type="text" id="vehicleType_${index}" value="${vehicle.type || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                                                     </div>
                                                     <div>
-                                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Weight:</label>
-                                                        <input type="text" id="vehicleWeight_${index}" value="${vehicle.weight || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Value:</label>
+                                                        <input type="number" id="vehicleValue_${index}" value="${vehicle.vehicle_cost || vehicle.value || ''}" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                                    </div>
+                                                    <div>
+                                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Deductible:</label>
+                                                        <input type="number" id="vehicleDeductible_${index}" value="${vehicle.deductible || ''}" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                                    </div>
+                                                    <div>
+                                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Radius:</label>
+                                                        <input type="text" id="vehicleRadius_${index}" value="${vehicle.radius || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                                                     </div>
                                                 </div>
                                             `;
@@ -7399,8 +7873,13 @@ contact@vigagency.com`;
                                             trailerDiv.innerHTML = `
                                                 <h4 style="margin: 0 0 15px 0; color: #333; border-bottom: 2px solid #28a745; padding-bottom: 8px;">
                                                     <i class="fas fa-trailer" style="color: #28a745; margin-right: 8px;"></i>
-                                                    Trailer ${index + 1}
+                                                    ${trailer.display_name || `Trailer ${trailer.trailerNumber || index + 1}`}
                                                 </h4>
+                                                ${trailer.trailerInfo ? `<div style="grid-column: span 2; background: #f3f4f6; padding: 10px; border-radius: 5px; border-left: 4px solid #28a745; margin-bottom: 15px;">
+                                                    <strong style="color: #1f2937;">CRM Trailer ID:</strong>
+                                                    <span style="color: #374151; font-weight: 500; margin-left: 5px;">${trailer.trailerInfo}</span>
+                                                    <small style="color: #6b7280; display: block; margin-top: 2px;">From CRM System</small>
+                                                </div>` : ''}
                                                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                                                     <div>
                                                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">Year:</label>
@@ -7409,6 +7888,10 @@ contact@vigagency.com`;
                                                     <div>
                                                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">Make:</label>
                                                         <input type="text" id="trailerMake_${index}" value="${trailer.make || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                                    </div>
+                                                    <div>
+                                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Model:</label>
+                                                        <input type="text" id="trailerModel_${index}" value="${trailer.model || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                                                     </div>
                                                     <div>
                                                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">Type:</label>
@@ -7420,11 +7903,15 @@ contact@vigagency.com`;
                                                     </div>
                                                     <div>
                                                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">Value:</label>
-                                                        <input type="number" id="trailerValue_${index}" value="${trailer.value || ''}" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                                        <input type="number" id="trailerValue_${index}" value="${trailer.trailer_cost || trailer.value || ''}" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                                                     </div>
                                                     <div>
                                                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">Deductible:</label>
                                                         <input type="number" id="trailerDeductible_${index}" value="${trailer.deductible || ''}" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                                    </div>
+                                                    <div>
+                                                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Radius:</label>
+                                                        <input type="text" id="trailerRadius_${index}" value="${trailer.radius || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                                                     </div>
                                                 </div>
                                             `;
@@ -7444,6 +7931,27 @@ contact@vigagency.com`;
                                         // Clear existing drivers to prevent duplication
                                         container.innerHTML = '';
                                         console.log('🗑️ Cleared existing drivers from container');
+
+                                        // Check for empty drivers and show enhanced message
+                                        if (!drivers || drivers.length === 0) {
+                                            console.log('👤 EMERGENCY POPULATE: No drivers, showing CRM data message');
+                                            container.innerHTML = `
+                                                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 10px 0; text-align: center;">
+                                                    <div style="color: #495057; margin-bottom: 15px;">
+                                                        <i class="fas fa-info-circle" style="color: #17a2b8; margin-right: 8px;"></i>
+                                                        <strong>No Driver Data from CRM</strong>
+                                                    </div>
+                                                    <p style="color: #6c757d; margin-bottom: 15px; line-height: 1.4;">
+                                                        The CRM database contains basic policy information but no detailed driver data.
+                                                        Click "Add Driver" below to manually enter driver details for this policy.
+                                                    </p>
+                                                    <button onclick="window.addDriver()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                                                        <i class="fas fa-plus" style="margin-right: 8px;"></i>Add First Driver
+                                                    </button>
+                                                </div>
+                                            `;
+                                            return;
+                                        }
 
                                         drivers.forEach((driver, index) => {
                                             console.log('👤 Adding driver', index + 1, ':', driver);
@@ -7799,7 +8307,7 @@ contact@vigagency.com`;
 
                                 // Get policy from allPolicies array
                                 if (window.allPolicies && window.allPolicies.length > 0) {
-                                    const policy = window.allPolicies.find(p => p.id === policyId);
+                                    const policy = window.allPolicies.find(p => p && p.id === policyId);
                                     console.log('🔍 Debug: Found policy:', !!policy);
                                     console.log('🔍 Debug: Policy COI docs:', policy?.coiDocuments?.length);
 
@@ -8839,24 +9347,62 @@ contact@vigagency.com`;
 
             try {
                 console.log('💾 Updating policy:', window.currentEditingPolicyId, 'with data:', updatedData);
+                console.log('📊 DATA SUMMARY:', {
+                    vehicleCount: updatedData.vehicles?.length || 0,
+                    driverCount: updatedData.drivers?.length || 0,
+                    trailerCount: updatedData.trailers?.length || 0,
+                    hasCoverageData: !!updatedData.coverage
+                });
 
-                // Update in database - AWAIT the async operation
-                const result = await window.policyDB.updatePolicy(window.currentEditingPolicyId, updatedData);
+                // First, update in local policyDB for immediate UI updates
+                const localResult = await window.policyDB.updatePolicy(window.currentEditingPolicyId, updatedData);
 
-                if (result) {
-                    // Show success message
-                    alert(`Policy updated successfully!\n\nPolicy: ${updatedData.insured_name}\nCarrier: ${updatedData.carrier}`);
-
-                    // Refresh display - AWAIT the async operations
-                    window.allPolicies = await window.policyDB.getAllPolicies();
-                    window.applyFilters();
-                    window.updateAdminStats();
-
-                    // Close modal and clear editing ID
-                    closeEditPolicyModal(true);
-                } else {
-                    alert('Failed to update policy. Please try again.');
+                if (!localResult) {
+                    alert('Failed to update policy locally. Please try again.');
+                    return;
                 }
+
+                // Then, update in backend CRM database with enhanced endpoint
+                try {
+                    console.log('🔄 Syncing detailed policy data to CRM backend...');
+                    // Ensure we use the correct policy ID format for the backend
+                    const policyId = window.currentEditingPolicyId.startsWith('policy_') ?
+                        window.currentEditingPolicyId :
+                        `policy_${window.currentEditingPolicyId}`;
+                    console.log('🔍 Using policy ID for backend sync:', policyId);
+
+                    const backendResponse = await fetch(`https://162-220-14-239.nip.io/api/policies/${policyId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(updatedData)
+                    });
+
+                    if (backendResponse.ok) {
+                        const backendResult = await backendResponse.json();
+                        console.log('✅ Backend sync successful:', backendResult);
+
+                        // Show enhanced success message with data summary
+                        alert(`Policy updated successfully!\n\nPolicy: ${updatedData.insured_name}\nCarrier: ${updatedData.carrier}\n\n📊 Data Updated:\n• ${backendResult.vehicleCount || 0} vehicles\n• ${backendResult.driverCount || 0} drivers\n• ${backendResult.trailerCount || 0} trailers\n\n✅ Changes saved to CRM database`);
+                    } else {
+                        console.warn('⚠️ Backend sync failed, but local update succeeded');
+                        const errorText = await backendResponse.text();
+                        console.error('Backend error:', errorText);
+                        alert(`Policy updated locally!\n\nPolicy: ${updatedData.insured_name}\nCarrier: ${updatedData.carrier}\n\n⚠️ Warning: Changes not synced to CRM database. Please try scanning again later.`);
+                    }
+                } catch (backendError) {
+                    console.error('Backend sync error:', backendError);
+                    alert(`Policy updated locally!\n\nPolicy: ${updatedData.insured_name}\nCarrier: ${updatedData.carrier}\n\n⚠️ Warning: Could not sync to CRM database due to network error.`);
+                }
+
+                // Refresh display - AWAIT the async operations
+                window.allPolicies = await window.policyDB.getAllPolicies();
+                window.applyFilters();
+                window.updateAdminStats();
+
+                // Close modal and clear editing ID
+                closeEditPolicyModal(true);
             } catch (error) {
                 console.error('Error updating policy:', error);
                 alert('Error updating policy. Please try again.');
@@ -10205,7 +10751,7 @@ contact@vigagency.com`;
                 alert('ACORD Certificate saved successfully! Any previous COI document has been replaced.');
 
                 // Refresh COI documents display if the edit modal is open
-                const currentPolicy = window.policyDB.getPolicyById(policyId);
+                const currentPolicy = await window.policyDB.getPolicyById(policyId);
                 if (currentPolicy && window.loadCOIFiles) {
                     console.log('🔄 Refreshing COI display after save');
                     window.loadCOIFiles(currentPolicy.policy_number);

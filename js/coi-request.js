@@ -137,7 +137,7 @@ async function submitCOIRequest(event) {
 
     } catch (error) {
         console.error('Error sending COI request to CRM:', error);
-        alert('Error: Unable to send COI request to CRM. Please contact us at contact@vigagency.com or call (330) 460-0872.');
+        alert('Error: Unable to send COI request to CRM. Please contact us at contact@vigagency.com or call (866) 628-9441.');
     } finally {
         // Restore button
         if (submitBtn) {
