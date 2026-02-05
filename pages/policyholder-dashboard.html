@@ -613,6 +613,38 @@
                     console.log('📅 Overlaid current date:', currentDate, 'at position:', dateX, dateY + 12);
                     console.log('📅 Date text bounds: X=' + dateX + ', Y=' + (dateY + 12) + ', within canvas=' + (dateX < canvas.width && dateY + 12 < canvas.height));
 
+                    // Add checkmarks for checked boxes based on current form state - adjusted Y positions up by 12 pixels
+                    const checkboxMapping = {
+                        'glCheck': { x: 47, y: 378 },
+                        'glOccurrence': { x: 150, y: 394 },
+                        'glClaimsMade': { x: 65, y: 394 },
+                        'autoAny': { x: 47, y: 503 },
+                        'autoOwned': { x: 47, y: 518 },
+                        'autoScheduled': { x: 135, y: 518 },
+                        'autoHired': { x: 47, y: 534 },
+                        'autoNonOwned': { x: 135, y: 534 },
+                        'umbrella': { x: 47, y: 565 },
+                        'excess': { x: 47, y: 581 },
+                        'wcStatute': { x: 552, y: 612 },
+                        'wcOther': { x: 618, y: 612 },
+                        'aggPolicy': { x: 47, y: 456 },
+                        'aggProject': { x: 103, y: 456 },
+                        'aggLocation': { x: 159, y: 456 },
+                        'aggOther': { x: 47, y: 472 }
+                    };
+
+                    // Draw checkmarks for checked boxes
+                    Object.entries(checkboxMapping).forEach(([fieldName, position]) => {
+                        const checkboxElement = document.getElementById(`field_${fieldName}`);
+                        if (checkboxElement && checkboxElement.checked) {
+                            // Draw a checkmark
+                            ctx.fillStyle = '#000000';
+                            ctx.font = 'bold 14px Arial, sans-serif';
+                            ctx.fillText('✓', position.x + 2, position.y + 12);
+                            console.log(`☑️ Drew checkmark for ${fieldName} at position ${position.x}, ${position.y}`);
+                        }
+                    });
+
                     // Convert canvas to PDF instead of PNG
                     try {
                         // Check if jsPDF is available, if not load it
@@ -951,7 +983,7 @@ ${certificateHolder}
 This certificate serves as evidence of insurance coverage. Please contact us if you have any questions.
 
 Best regards,
-VigAgency Team
+Vanguard Insurance Group
 contact@vigagency.com`;
 
                 formData.append('message', emailMessage);
@@ -1628,41 +1660,71 @@ contact@vigagency.com`;
                 const policyCard = document.createElement('div');
                 policyCard.className = 'policy-card';
 
-                // Determine icon based on policy type
-                let icon = 'fa-file-contract';
-                if (policy.type && policy.type.toLowerCase().includes('auto')) {
+                // Determine icon and title based on policy type
+                let icon = 'fa-truck';
+                let policyTypeName = 'Commercial Auto Insurance';
+
+                // Check multiple possible field names for policy type
+                const typeStr = (
+                    policy.policyType ||      // Most likely field name from API
+                    policy.type ||
+                    policy.policy_type ||
+                    policy.policyCategory ||
+                    policy.category ||
+                    policy.typeString ||
+                    policy.insurance_type ||
+                    policy.coverage_type ||
+                    ''
+                ).toLowerCase();
+
+                // Log policy type detection for debugging (can be removed once confirmed working)
+                if (typeStr.includes('personal')) {
+                    console.log('✅ Detected personal auto policy:', policy.id, '-', typeStr);
+                }
+                // Check specific types first, then generic ones
+                if (typeStr.includes('personal-auto') || typeStr.includes('personal auto')) {
+                    icon = 'fa-car';
+                    policyTypeName = 'Personal Auto Insurance';
+                } else if (typeStr.includes('commercial-auto') || typeStr.includes('commercial auto') ||
+                          (typeStr.includes('auto') && !typeStr.includes('personal'))) {
                     icon = 'fa-truck';
-                } else if (policy.type && policy.type.toLowerCase().includes('liability')) {
+                    policyTypeName = 'Commercial Auto Insurance';
+                } else if (typeStr.includes('liability') || typeStr.includes('general liability')) {
                     icon = 'fa-shield-alt';
-                } else if (policy.type && policy.type.toLowerCase().includes('cargo')) {
+                    policyTypeName = 'General Liability Insurance';
+                } else if (typeStr.includes('cargo')) {
                     icon = 'fa-boxes';
+                    policyTypeName = 'Cargo Insurance';
+                } else if (typeStr.includes('home') || typeStr.includes('property')) {
+                    icon = 'fa-home';
+                    policyTypeName = 'Property Insurance';
+                } else if (typeStr.includes('workers comp') || typeStr.includes('workers')) {
+                    icon = 'fa-hard-hat';
+                    policyTypeName = 'Workers Compensation';
+                } else if (policy.type || policy.policy_type) {
+                    policyTypeName = policy.type || policy.policy_type;
                 }
 
                 policyCard.innerHTML = `
-                    <div class="policy-header">
-                        <div class="policy-title">
-                            <i class="fas ${icon}"></i>
-                            <h3>${policy.type || 'Insurance Policy'}</h3>
+                    <div class="policy-card-header">
+                        <div>
+                            <h3 class="policy-type"><i class="fas ${icon}"></i> ${policyTypeName}</h3>
+                            <div class="policy-number">Policy #: ${policy.policy_number || policy.policyNumber || 'N/A'}</div>
                         </div>
-                        <span class="policy-status ${policy.status === 'Active' ? 'active' : ''}">${policy.status || 'Active'}</span>
+                        <span class="policy-status ${(policy.status === 'Active' || policy.policyStatus === 'Active') ? 'active' : 'pending'}">${policy.status || policy.policyStatus || 'Active'}</span>
                     </div>
-                    <div class="policy-number">Policy #: ${policy.policy_number}</div>
                     <div class="policy-details">
-                        <div class="policy-detail">
-                            <div class="policy-detail-label">Premium</div>
-                            <div class="policy-detail-value">${formatCurrency(policy.premium || 0)}</div>
-                        </div>
-                        <div class="policy-detail">
-                            <div class="policy-detail-label">Effective</div>
-                            <div class="policy-detail-value">${formatDate(policy.effective_date)}</div>
-                        </div>
-                        <div class="policy-detail">
-                            <div class="policy-detail-label">Expires</div>
-                            <div class="policy-detail-value">${formatDate(policy.expiration_date)}</div>
-                        </div>
                         <div class="policy-detail">
                             <div class="policy-detail-label">Carrier</div>
                             <div class="policy-detail-value">${policy.carrier || 'N/A'}</div>
+                        </div>
+                        <div class="policy-detail">
+                            <div class="policy-detail-label">Effective Date</div>
+                            <div class="policy-detail-value">${formatDate(policy.effective_date || policy.effectiveDate)}</div>
+                        </div>
+                        <div class="policy-detail">
+                            <div class="policy-detail-label">Expiration Date</div>
+                            <div class="policy-detail-value">${formatDate(policy.expiration_date || policy.expirationDate)}</div>
                         </div>
                     </div>
                     <div class="policy-actions">
@@ -1698,8 +1760,50 @@ contact@vigagency.com`;
             const policyCard = document.createElement('div');
             policyCard.className = 'policy-card';
 
-            // Default icon for commercial trucking
-            const icon = 'fa-truck';
+            // Determine icon and title based on policy type (same logic as displayPolicies)
+            let icon = 'fa-truck';
+            let policyTypeName = 'Commercial Auto Insurance';
+
+            // Check multiple possible field names for policy type
+            const typeStr = (
+                policy.policyType ||      // Most likely field name from API
+                policy.type ||
+                policy.policy_type ||
+                policy.policyCategory ||
+                policy.category ||
+                policy.typeString ||
+                policy.insurance_type ||
+                policy.coverage_type ||
+                ''
+            ).toLowerCase();
+
+            // Log policy type detection for debugging (can be removed once confirmed working)
+            if (typeStr.includes('personal')) {
+                console.log('✅ Detected personal auto policy:', policy.id, '-', typeStr);
+            }
+            // Check specific types first, then generic ones
+            if (typeStr.includes('personal-auto') || typeStr.includes('personal auto')) {
+                icon = 'fa-car';
+                policyTypeName = 'Personal Auto Insurance';
+            } else if (typeStr.includes('commercial-auto') || typeStr.includes('commercial auto') ||
+                      (typeStr.includes('auto') && !typeStr.includes('personal'))) {
+                icon = 'fa-truck';
+                policyTypeName = 'Commercial Auto Insurance';
+            } else if (typeStr.includes('liability') || typeStr.includes('general liability')) {
+                icon = 'fa-shield-alt';
+                policyTypeName = 'General Liability Insurance';
+            } else if (typeStr.includes('cargo')) {
+                icon = 'fa-boxes';
+                policyTypeName = 'Cargo Insurance';
+            } else if (typeStr.includes('home') || typeStr.includes('property')) {
+                icon = 'fa-home';
+                policyTypeName = 'Property Insurance';
+            } else if (typeStr.includes('workers comp') || typeStr.includes('workers')) {
+                icon = 'fa-hard-hat';
+                policyTypeName = 'Workers Compensation';
+            } else if (policy.type || policy.policy_type) {
+                policyTypeName = policy.type || policy.policy_type;
+            }
 
             // Parse premium string (e.g., "$14,628.00" to number)
             let premiumValue = 0;
@@ -1714,7 +1818,7 @@ contact@vigagency.com`;
             policyCard.innerHTML = `
                 <div class="policy-card-header">
                     <div>
-                        <h3 class="policy-type"><i class="fas ${icon}"></i> Commercial Auto Insurance</h3>
+                        <h3 class="policy-type"><i class="fas ${icon}"></i> ${policyTypeName}</h3>
                         <div class="policy-number">Policy #: ${policy.policyNumber || policy.policy_number || 'N/A'}</div>
                     </div>
                     <span class="policy-status ${(policy.policyStatus || policy.status) === 'Active' ? 'active' : 'pending'}">${policy.policyStatus || policy.status || 'Active'}</span>

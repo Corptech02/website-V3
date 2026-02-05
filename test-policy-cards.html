@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Policy Cards Test</title>
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        .test-section { margin: 30px 0; border: 2px solid #ccc; padding: 20px; border-radius: 8px; }
+        .test-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Policy Cards Consistency Test</h1>
+
+    <div class="test-section">
+        <div class="test-title">Test 1: Single Policy Display</div>
+        <p>This should show the proper card layout with policy-card-header structure.</p>
+        <div id="singlePolicyTest"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">Test 2: Multiple Policies Display</div>
+        <p>This should show the same card layout as single policy (after our fix).</p>
+        <div id="multiplePoliciesTest"></div>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        console.log('🚀 Starting Policy Cards Test...');
+
+        // Test data
+        const singlePolicy = {
+            id: 'POL-TEST-001',
+            policy_number: 'TEST001',
+            type: 'Commercial Auto',
+            carrier: 'Test Insurance',
+            effective_date: '2025-02-01',
+            expiration_date: '2026-02-01',
+            status: 'Active'
+        };
+
+        const multiplePolicies = [
+            {
+                id: 'POL-TEST-002',
+                policy_number: 'TEST002',
+                type: 'Commercial Auto',
+                carrier: 'Farmers',
+                effective_date: '2025-02-01',
+                expiration_date: '2026-02-01',
+                status: 'Active'
+            },
+            {
+                id: 'POL-TEST-003',
+                policy_number: 'TEST003',
+                type: 'General Liability',
+                carrier: 'Progressive',
+                effective_date: '2025-02-19',
+                expiration_date: '2026-02-19',
+                status: 'Active'
+            }
+        ];
+
+        // Helper functions (copied from the main file)
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Test single policy display (same logic as vigagency displayPolicy function)
+        function testSinglePolicy() {
+            console.log('🧪 Testing single policy display...');
+            const container = document.getElementById('singlePolicyTest');
+            const policy = singlePolicy;
+
+            // Determine icon and title based on policy type
+            let icon = 'fa-truck';
+            let policyTypeName = 'Commercial Auto Insurance';
+
+            const typeStr = (policy.type || policy.policy_type || '').toLowerCase();
+            if (typeStr.includes('auto') || typeStr.includes('commercial auto')) {
+                icon = 'fa-truck';
+                policyTypeName = 'Commercial Auto Insurance';
+            } else if (typeStr.includes('liability') || typeStr.includes('general liability')) {
+                icon = 'fa-shield-alt';
+                policyTypeName = 'General Liability Insurance';
+            }
+
+            const html = `
+                <div class="policy-card">
+                    <div class="policy-card-header">
+                        <div>
+                            <h3 class="policy-type"><i class="fas ${icon}"></i> ${policyTypeName}</h3>
+                            <div class="policy-number">Policy #: ${policy.policy_number}</div>
+                        </div>
+                        <span class="policy-status active">${policy.status}</span>
+                    </div>
+                    <div class="policy-details">
+                        <div class="policy-detail">
+                            <div class="policy-detail-label">Carrier</div>
+                            <div class="policy-detail-value">${policy.carrier}</div>
+                        </div>
+                        <div class="policy-detail">
+                            <div class="policy-detail-label">Effective Date</div>
+                            <div class="policy-detail-value">${formatDate(policy.effective_date)}</div>
+                        </div>
+                        <div class="policy-detail">
+                            <div class="policy-detail-label">Expiration Date</div>
+                            <div class="policy-detail-value">${formatDate(policy.expiration_date)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            return html.includes('policy-card-header');
+        }
+
+        // Test multiple policies display (same logic as vigagency displayPolicies function after fix)
+        function testMultiplePolicies() {
+            console.log('🧪 Testing multiple policies display...');
+            const container = document.getElementById('multiplePoliciesTest');
+
+            let html = '';
+            multiplePolicies.forEach(policy => {
+                // Determine icon and title based on policy type
+                let icon = 'fa-truck';
+                let policyTypeName = 'Commercial Auto Insurance';
+
+                const typeStr = (policy.type || policy.policy_type || '').toLowerCase();
+                if (typeStr.includes('auto') || typeStr.includes('commercial auto')) {
+                    icon = 'fa-truck';
+                    policyTypeName = 'Commercial Auto Insurance';
+                } else if (typeStr.includes('liability') || typeStr.includes('general liability')) {
+                    icon = 'fa-shield-alt';
+                    policyTypeName = 'General Liability Insurance';
+                }
+
+                html += `
+                    <div class="policy-card">
+                        <div class="policy-card-header">
+                            <div>
+                                <h3 class="policy-type"><i class="fas ${icon}"></i> ${policyTypeName}</h3>
+                                <div class="policy-number">Policy #: ${policy.policy_number}</div>
+                            </div>
+                            <span class="policy-status active">${policy.status}</span>
+                        </div>
+                        <div class="policy-details">
+                            <div class="policy-detail">
+                                <div class="policy-detail-label">Carrier</div>
+                                <div class="policy-detail-value">${policy.carrier}</div>
+                            </div>
+                            <div class="policy-detail">
+                                <div class="policy-detail-label">Effective Date</div>
+                                <div class="policy-detail-value">${formatDate(policy.effective_date)}</div>
+                            </div>
+                            <div class="policy-detail">
+                                <div class="policy-detail-label">Expiration Date</div>
+                                <div class="policy-detail-value">${formatDate(policy.expiration_date)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            return html.includes('policy-card-header');
+        }
+
+        // Run tests
+        window.addEventListener('load', () => {
+            const results = [];
+
+            try {
+                const singleTest = testSinglePolicy();
+                results.push({
+                    test: 'Single Policy Display',
+                    passed: singleTest,
+                    message: singleTest ? '✅ Uses policy-card-header structure' : '❌ Does not use policy-card-header structure'
+                });
+            } catch (error) {
+                results.push({
+                    test: 'Single Policy Display',
+                    passed: false,
+                    message: '❌ Error: ' + error.message
+                });
+            }
+
+            try {
+                const multipleTest = testMultiplePolicies();
+                results.push({
+                    test: 'Multiple Policies Display',
+                    passed: multipleTest,
+                    message: multipleTest ? '✅ Uses policy-card-header structure' : '❌ Does not use policy-card-header structure'
+                });
+            } catch (error) {
+                results.push({
+                    test: 'Multiple Policies Display',
+                    passed: false,
+                    message: '❌ Error: ' + error.message
+                });
+            }
+
+            // Display results
+            const resultsContainer = document.getElementById('results');
+            let resultsHTML = '<h2>Test Results</h2>';
+
+            const allPassed = results.every(r => r.passed);
+            resultsHTML += `<div class="status ${allPassed ? 'success' : 'error'}">
+                Overall: ${allPassed ? '✅ All tests passed!' : '❌ Some tests failed'}
+            </div>`;
+
+            results.forEach(result => {
+                resultsHTML += `<div class="status ${result.passed ? 'success' : 'error'}">
+                    ${result.test}: ${result.message}
+                </div>`;
+            });
+
+            resultsContainer.innerHTML = resultsHTML;
+
+            console.log('🏁 Test completed:', results);
+        });
+    </script>
+</body>
+</html>
