@@ -31,6 +31,20 @@
             background: #c0392b !important;
         }
 
+        /* Mobile-only logout nav item */
+        .nav-logout-mobile {
+            display: none;
+        }
+        @media (max-width: 900px) {
+            .nav-logout-mobile {
+                display: list-item !important;
+            }
+            .nav-logout-mobile .nav-link {
+                color: #ff8a80 !important;
+                font-weight: 600 !important;
+            }
+        }
+
         .dashboard-container {
             max-width: 1400px;
             margin: 100px auto 40px;
@@ -430,7 +444,6 @@
                 </div>
                 <div class="nav-menu" id="navMenu">
                     <ul class="nav-list">
-                        <li class="nav-item"><a href="login.html" class="nav-link">Login</a></li>
                         <li class="nav-item"><a href="../index.html" class="nav-link">Home</a></li>
                         <li class="nav-item dropdown">
                             <a href="../index.html#products" class="nav-link">Products</a>
@@ -446,6 +459,7 @@
                         <li class="nav-item"><a href="../about.html" class="nav-link">About</a></li>
                         <li class="nav-item"><a href="../index.html#contact" class="nav-link">Contact</a></li>
                         <li class="nav-item"><a href="policyholder-dashboard.html" class="nav-link nav-link-profile">Profile</a></li>
+                        <li class="nav-item nav-logout-mobile"><a href="#" class="nav-link" id="mobileLogoutBtn">Logout</a></li>
                     </ul>
                 </div>
                 <div class="nav-actions">
@@ -760,9 +774,9 @@
                                     <!-- Saved Certificate Holders Button -->
                                     <div style="margin-bottom: 20px; text-align: center;">
                                         <button type="button" onclick="showSavedCertificateHolders()"
-                                                style="background: linear-gradient(135deg, #059669, #047857); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2); transition: all 0.3s ease;"
-                                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(5, 150, 105, 0.3)'"
-                                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(5, 150, 105, 0.2)'">
+                                                style="background: linear-gradient(135deg, #0066cc, #003d7a); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2); transition: all 0.3s ease;"
+                                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0, 102, 204, 0.3)'"
+                                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0, 102, 204, 0.2)'">
                                             <i class="fas fa-address-book" style="margin-right: 8px;"></i>
                                             Saved Certificate Holders
                                         </button>
@@ -784,7 +798,7 @@
                                 <div class="form-group">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                         <label><strong>Email Recipients</strong></label>
-                                        <button type="button" onclick="addCOIEmailRecipient()" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                        <button type="button" onclick="addCOIEmailRecipient()" style="background: linear-gradient(135deg, #0066cc, #003d7a); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;">
                                             + Add Recipient
                                         </button>
                                     </div>
@@ -794,7 +808,7 @@
                                                    style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"
                                                    placeholder="recipient@example.com" value="${policy.client_email || ''}">
                                             <button type="button" onclick="removeCOIEmailRecipient(this)"
-                                                    style="background: #dc3545; color: white; border: none; padding: 10px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                                    style="background: white; color: #666; border: 2px solid #e1e8ed; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;">
                                                 Remove
                                             </button>
                                         </div>
@@ -921,7 +935,10 @@
                     const coiResponse = await fetch(`https://162-220-14-239.nip.io/api/coi/${policy.id}`);
 
                     if (!coiResponse.ok) {
-                        alert('No COI document found for this policy');
+                        const errorData = await coiResponse.json().catch(() => null);
+                        const message = errorData?.message || 'No COI document found for this policy';
+                        alert(`COI Request Failed: ${message}\n\nPlease contact your agent at contact@vigagency.com or (866) 628-9441 to request a Certificate of Insurance for this policy.`);
+                        console.error('COI fetch failed:', coiResponse.status, message);
                         return;
                     }
 
@@ -932,7 +949,7 @@
                     policy.coiDocuments = [coiDocument];
                 } catch (error) {
                     console.error('Error fetching COI document:', error);
-                    alert('No COI document found for this policy');
+                    alert(`COI Request Failed: Unable to access COI document.\n\nPlease contact your agent at contact@vigagency.com or (866) 628-9441 to request a Certificate of Insurance for this policy.`);
                     return;
                 }
 
@@ -1025,7 +1042,7 @@ contact@vigagency.com`;
 
             newRow.innerHTML = `
                 <input type="email" class="coi-email-recipient" required style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" placeholder="recipient@example.com" value="">
-                <button type="button" onclick="removeCOIEmailRecipient(this)" style="background: #dc3545; color: white; border: none; padding: 10px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                <button type="button" onclick="removeCOIEmailRecipient(this)" style="background: white; color: #666; border: 2px solid #e1e8ed; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;">
                     Remove
                 </button>
             `;
@@ -1974,11 +1991,12 @@ contact@vigagency.com`;
                     document.body.appendChild(modal);
                 } else {
                     console.log('❌ COI API error:', result.message || result.error);
-                    alert(result.message || 'COI document not available. Please contact your agent to request one.');
+                    const message = result.message || result.error || 'COI document not available';
+                    alert(`COI Document Not Available: ${message}\n\nPlease contact your agent at contact@vigagency.com or (866) 628-9441 to request a Certificate of Insurance for this policy.`);
                 }
             } catch (error) {
                 console.error('❌ Error calling COI API:', error);
-                alert('Error loading COI document. Please try again or contact support.');
+                alert(`Error loading COI document: ${error.message || 'Network error'}\n\nPlease contact your agent at contact@vigagency.com or (866) 628-9441 if this issue persists.`);
             }
 
         }; // End of viewCurrentCOI_DEBUG function
@@ -2021,20 +2039,19 @@ contact@vigagency.com`;
             loadPolicies();
 
             // Handle logout
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    // Clear login state
-                    localStorage.removeItem('vanguard_logged_in');
-                    localStorage.removeItem('vanguard_user_name');
-                    localStorage.removeItem('vanguard_policy_number');
-                    localStorage.removeItem('vanguard_auth_token');
-                    localStorage.removeItem('vanguard_test_mode');
-                    // Redirect to login
-                    window.location.href = 'login.html';
-                });
+            function doLogout(e) {
+                e.preventDefault();
+                localStorage.removeItem('vanguard_logged_in');
+                localStorage.removeItem('vanguard_user_name');
+                localStorage.removeItem('vanguard_policy_number');
+                localStorage.removeItem('vanguard_auth_token');
+                localStorage.removeItem('vanguard_test_mode');
+                window.location.href = 'login.html';
             }
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
+            const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+            if (mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', doLogout);
         });
 
         // === CERTIFICATE HOLDERS FUNCTIONALITY ===

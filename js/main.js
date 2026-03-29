@@ -368,20 +368,11 @@ function updateHeaderForLoggedInUser(userName) {
             }
         });
 
-        // Check if Profile link already exists
-        const existingProfile = document.querySelector('.nav-link-profile');
-        if (!existingProfile) {
-            // Add Profile link to nav (link to dashboard)
-            const profileLi = document.createElement('li');
-            profileLi.className = 'nav-item';
-
-            // Determine the correct path to dashboard based on current location
-            const currentPath = window.location.pathname;
-            const dashboardPath = currentPath.includes('/pages/') ? 'policyholder-dashboard.html' : 'pages/policyholder-dashboard.html';
-
-            profileLi.innerHTML = `<a href="${dashboardPath}" class="nav-link nav-link-profile">Profile</a>`;
-            navList.appendChild(profileLi);
-        }
+        // Show profile nav item, hide mobile login nav item
+        const profileNavItem = document.getElementById('profileNavItem');
+        const mobileLoginNavItem = document.getElementById('mobileLoginNavItem');
+        if (profileNavItem) profileNavItem.style.display = '';
+        if (mobileLoginNavItem) mobileLoginNavItem.style.display = 'none';
 
         // Update Login button to Logout button
         const loginBtn = navActions.querySelector('.btn-primary');

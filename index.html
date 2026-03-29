@@ -78,7 +78,7 @@
     <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
 
     <!-- Preload Critical Resources -->
-    <link rel="preload" href="css/styles.css?v=1768185620" as="style">
+    <link rel="preload" href="css/styles.css?v=1768185621" as="style">
     <link rel="preload" href="images/v-logo.png" as="image">
 
     <!-- Structured Data (JSON-LD) -->
@@ -221,7 +221,7 @@
     <link rel="shortcut icon" type="image/png" href="images/v-logo.png?v=2">
     <link rel="apple-touch-icon" href="images/v-logo.png?v=2">
     <link rel="icon" href="/favicon.png" type="image/png">
-    <link rel="stylesheet" href="css/styles.css?v=1768185620">
+    <link rel="stylesheet" href="css/styles.css?v=1768185621">
     <link rel="stylesheet" href="css/coi-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -236,9 +236,9 @@
                 <div class="nav-brand">
                     <img src="images/vanguard-logo.png" alt="Vanguard Insurance Group" class="logo">
                 </div>
-                <div class="nav-menu" id="navMenu">
+                <div class="nav-menu active" id="navMenu">
                     <ul class="nav-list">
-                        <li class="nav-item"><a href="pages/login.html" class="nav-link">Login</a></li>
+                        <li class="nav-item" id="profileNavItem" style="display:none;"><a href="pages/policyholder-dashboard.html" class="nav-link">Profile</a></li>
                         <li class="nav-item"><a href="#home" class="nav-link">Home</a></li>
                         <li class="nav-item dropdown">
                             <a href="#products" class="nav-link">Products</a>
@@ -253,12 +253,13 @@
                         <li class="nav-item"><a href="#resources" class="nav-link">Resources</a></li>
                         <li class="nav-item"><a href="about.html" class="nav-link">About</a></li>
                         <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
-                        <li class="nav-item"><a href="pages/quote-commercial-auto.html" class="nav-link">Get a Quote</a></li>
+                        <li class="nav-item nav-item-mobile-login" id="mobileLoginNavItem" style="display:none;"><a href="pages/login.html" class="nav-link" style="color: var(--primary-blue) !important; font-weight: 600;">Login</a></li>
                     </ul>
                 </div>
                 <div class="nav-actions">
-                    <a href="pages/login.html" class="btn btn-primary">Login</a>
-                    <button class="nav-toggle" id="navToggle">
+                    <a href="pages/login.html" class="btn btn-primary" id="loginBtn" style="display:none;">Login</a>
+                    <a href="#" class="btn btn-primary logout-btn-dynamic" id="logoutBtn" style="display:none;" onclick="logoutUser(); return false;">Logout</a>
+                    <button class="nav-toggle active" id="navToggle">
                         <span></span>
                         <span></span>
                         <span></span>
@@ -829,41 +830,47 @@
     <script src="js/main.js"></script>
 
     <script>
+        // Logout function
+        function logoutUser() {
+            // Clear all login-related data
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('policyNumber');
+            localStorage.removeItem('customerData');
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('policyNumber');
+            sessionStorage.removeItem('customerData');
+
+            // Redirect to login page
+            window.location.href = 'pages/login.html';
+        }
+
         // Handle dynamic Login/Profile switching based on login status
         document.addEventListener('DOMContentLoaded', function() {
-            const firstNavLink = document.querySelector('.nav-list .nav-item:first-child .nav-link');
+            const profileNavItem = document.getElementById('profileNavItem');
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const mobileLoginNavItem = document.getElementById('mobileLoginNavItem');
 
-            // Check if user is logged in with more comprehensive checks
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' ||
-                              localStorage.getItem('policyNumber') !== null && localStorage.getItem('policyNumber') !== '' ||
+            // Check if user is logged in
+            const isLoggedIn = localStorage.getItem('vanguard_logged_in') === 'true' ||
+                              localStorage.getItem('isLoggedIn') === 'true' ||
+                              (localStorage.getItem('policyNumber') !== null && localStorage.getItem('policyNumber') !== '') ||
                               sessionStorage.getItem('isLoggedIn') === 'true' ||
-                              sessionStorage.getItem('policyNumber') !== null && sessionStorage.getItem('policyNumber') !== '' ||
-                              // Check if we came from dashboard (referrer check)
-                              document.referrer.includes('/pages/policyholder-dashboard.html');
+                              (sessionStorage.getItem('policyNumber') !== null && sessionStorage.getItem('policyNumber') !== '');
 
-            console.log('Login check:', {
-                localStorage_isLoggedIn: localStorage.getItem('isLoggedIn'),
-                localStorage_policyNumber: localStorage.getItem('policyNumber'),
-                sessionStorage_isLoggedIn: sessionStorage.getItem('isLoggedIn'),
-                sessionStorage_policyNumber: sessionStorage.getItem('policyNumber'),
-                referrer: document.referrer,
-                finalResult: isLoggedIn
-            });
+            const isDesktop = window.innerWidth > 900;
 
-            if (firstNavLink) {
-                if (isLoggedIn) {
-                    // Change to Profile when logged in
-                    firstNavLink.textContent = 'Profile';
-                    firstNavLink.href = 'pages/policyholder-dashboard.html';
-                    firstNavLink.classList.remove('logout-link');
-                    console.log('Changed to Profile');
-                } else {
-                    // Show Login when not logged in
-                    firstNavLink.textContent = 'Login';
-                    firstNavLink.href = 'pages/login.html';
-                    firstNavLink.classList.remove('logout-link');
-                    console.log('Showing Login');
-                }
+            if (isLoggedIn) {
+                if (profileNavItem) profileNavItem.style.display = '';
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = '';
+                if (mobileLoginNavItem) mobileLoginNavItem.style.display = 'none';
+            } else {
+                if (profileNavItem) profileNavItem.style.display = 'none';
+                if (loginBtn) loginBtn.style.display = '';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+                // Only show mobile login item on mobile — JS enforced on top of CSS
+                if (mobileLoginNavItem) mobileLoginNavItem.style.display = isDesktop ? 'none' : '';
             }
         });
     </script>

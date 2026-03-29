@@ -107,13 +107,21 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     margin-right: 30px !important;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 25px;
+    padding: 8px 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .nav-list {
     display: flex;
     list-style: none;
-    gap: 2rem;
+    gap: 1.5rem;
     align-items: center;
+    margin: 0;
+    padding: 0;
 }
 
 .nav-link {
@@ -122,7 +130,8 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 500;
     position: relative;
     transition: color 0.3s ease;
-    padding: 0.5rem 0;
+    padding: 0.3rem 0;
+    font-size: 14px;
 }
 
 .nav-link::after {
@@ -529,7 +538,12 @@ section {
     box-shadow: var(--shadow-md);
     transition: all 0.4s ease;
     position: relative;
-    overflow: hidden;
+    overflow: hidden !important;
+    height: auto !important;
+    max-height: none !important;
+    -webkit-overflow-scrolling: none !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
 }
 
 .product-image {
@@ -1438,6 +1452,52 @@ section {
         display: flex !important;
     }
 
+    /* Floating Navigation Box Override - Vertical Menu */
+.nav-menu.active {
+    position: fixed !important;
+    top: calc(100vh - 700px) !important;
+    right: 10px !important;
+    transform: none !important;
+    width: 125px !important;
+    height: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    z-index: 999999 !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 25px !important;
+    padding: 25px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.nav-menu.active .nav-list {
+    flex-direction: column !important;
+    padding: 0 !important;
+    gap: 1rem !important;
+    margin: 0 !important;
+}
+
+.nav-menu.active .nav-item {
+    width: 100% !important;
+}
+
+.nav-menu.active .nav-link {
+    padding: 0.5rem 0 !important;
+    font-size: 14px !important;
+    display: block !important;
+    color: var(--dark-gray) !important;
+    text-align: center !important;
+}
+
+/* Hide logout link in navigation on desktop view (since we have logout button in header) */
+@media (min-width: 769px) {
+    .nav-list .nav-item .nav-link.logout-link {
+        display: none !important;
+    }
+}
+
     /* Hide login button on mobile */
     .nav-actions .btn-primary {
         display: none !important;
@@ -1966,4 +2026,11 @@ section {
     right: 0;
     bottom: 0;
     pointer-events: none;
+}
+
+/* Hide mobile-only login nav item on desktop — must be top-level, not nested */
+@media (min-width: 901px) {
+    #mobileLoginNavItem {
+        display: none !important;
+    }
 }

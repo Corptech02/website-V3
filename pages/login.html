@@ -448,7 +448,7 @@
                 } else {
                     // Show error message
                     setTimeout(() => {
-                        alert('Login Failed\n\n' + authResult.error + '\n\nPlease verify:\n• Email is correct\n• Password is correct\n\nAvailable test accounts:\n• Email: test@example.com, Password: test123 (UI Demo)\n• Email: admin@vigagency.com, Password: admin123 (Admin)');
+                        alert('Login Failed\n\nInvalid email or password\n\nPlease verify:\n• Email is correct\n• Password is correct');
 
                         // Re-enable button
                         submitButton.disabled = false;
