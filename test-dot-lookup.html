@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DOT Lookup Test</title>
+</head>
+<body>
+    <h1>DOT Lookup Integration Test</h1>
+    <div>
+        <h3>Test Cases:</h3>
+        <button onclick="testDOTLookup('3342195', 'SKUR TRANSPORT LLC')">Test SKUR TRANSPORT LLC (DOT: 3342195)</button><br><br>
+        <button onclick="testDOTLookup('3358505', 'CIBULA HARVESTING LLC')">Test CIBULA HARVESTING LLC (DOT: 3358505)</button><br><br>
+        <button onclick="testCarrierProfileAPI('3342195')">Test Carrier Profile API (DOT: 3342195)</button><br><br>
+    </div>
+
+    <div id="results" style="margin-top: 20px; padding: 20px; border: 1px solid #ccc; background: #f9f9f9;">
+        <h3>Results:</h3>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // Test DOT lookup function
+        async function testDOTLookup(dotNumber, companyName) {
+            const output = document.getElementById('output');
+            output.innerHTML += `<p><strong>Testing ${companyName} (DOT: ${dotNumber})...</strong></p>`;
+
+            try {
+                // Test the API endpoint directly
+                const response = await fetch(`/api/test-db/${dotNumber}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    output.innerHTML += `
+                        <div style="background: #d4edda; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                            <h4>✅ SUCCESS: ${data.carrier.legal_name}</h4>
+                            <p><strong>DOT:</strong> ${data.carrier.dot_number}</p>
+                            <p><strong>Phone:</strong> ${data.carrier.phone}</p>
+                            <p><strong>Email:</strong> ${data.carrier.email}</p>
+                            <p><strong>State:</strong> ${data.carrier.state}</p>
+                            <p><strong>Power Units:</strong> ${data.carrier.power_units}</p>
+                            <p><strong>Vehicles:</strong> ${data.carrier.vehicle_inventory?.length || 0}</p>
+                            <p><strong>Trailers:</strong> ${data.carrier.trailer_inventory?.length || 0}</p>
+                            <p><strong>Insurance:</strong> ${data.carrier.insurance_company}</p>
+                        </div>
+                    `;
+                } else {
+                    output.innerHTML += `<div style="background: #f8d7da; padding: 10px; margin: 10px 0; border-radius: 4px;">❌ ERROR: ${data.error}</div>`;
+                }
+            } catch (error) {
+                output.innerHTML += `<div style="background: #f8d7da; padding: 10px; margin: 10px 0; border-radius: 4px;">❌ FETCH ERROR: ${error.message}</div>`;
+            }
+        }
+
+        // Test carrier profile API directly
+        async function testCarrierProfileAPI(dotNumber) {
+            const output = document.getElementById('output');
+            output.innerHTML += `<p><strong>Testing Carrier Profile API for DOT: ${dotNumber}...</strong></p>`;
+
+            try {
+                const response = await fetch(`/api/carrier/profile/${dotNumber}`);
+                const data = await response.json();
+
+                output.innerHTML += `
+                    <div style="background: #d1ecf1; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                        <h4>API Response:</h4>
+                        <pre style="white-space: pre-wrap; font-size: 12px;">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                output.innerHTML += `<div style="background: #f8d7da; padding: 10px; margin: 10px 0; border-radius: 4px;">❌ API ERROR: ${error.message}</div>`;
+            }
+        }
+
+        // Check if DOT lookup integration is loaded
+        window.addEventListener('load', () => {
+            const output = document.getElementById('output');
+            if (typeof window.performDOTLookupForLead === 'function') {
+                output.innerHTML += `<div style="background: #d4edda; padding: 10px; margin: 10px 0; border-radius: 4px;">✅ DOT Lookup Integration Loaded</div>`;
+            } else {
+                output.innerHTML += `<div style="background: #fff3cd; padding: 10px; margin: 10px 0; border-radius: 4px;">⚠️ DOT Lookup Integration Not Found</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

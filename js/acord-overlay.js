@@ -1,9 +1,10 @@
-// ACORD 25 Overlay - Vigagency Version
-console.log('📝 ACORD 25 Overlay Module Loading for Vigagency...');
+// ACORD 25 Overlay - Adds Grant Corp text overlay on the PDF
+console.log('📝 ACORD 25 Overlay Module Loading...');
 
-// Function to create COI with overlay for vigagency
-window.createVigagencyCOI = function(policyData) {
-    console.log('Creating vigagency COI with overlay for policy:', policyData);
+// Override the prepareCOI function to add overlay
+const originalPrepareCOI = window.prepareCOI;
+window.prepareCOI = function(policyId) {
+    console.log('Preparing COI with overlay for policy:', policyId);
 
     // Get the policy viewer element
     const policyViewer = document.getElementById('policyViewer');
@@ -12,12 +13,23 @@ window.createVigagencyCOI = function(policyData) {
         return;
     }
 
-    // Use policy data directly (vigagency structure)
-    const policy = policyData;
+    // Get policy data
+    const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+    const policy = policies.find(p =>
+        p.policyNumber === policyId ||
+        p.id === policyId ||
+        String(p.id) === String(policyId)
+    );
 
-    // Get policy ID for use in template
-    const policyId = policy.id || policy.policy_number || 'unknown';
-    console.log('Policy ID set to:', policyId);
+    if (!policy) {
+        console.error('Policy not found:', policyId);
+        alert('Policy not found');
+        return;
+    }
+
+    // Get client data if available
+    const clients = JSON.parse(localStorage.getItem('insurance_clients') || '[]');
+    const client = clients.find(c => c.id === policy.clientId) || {};
 
     // Create the ACORD 25 display with embedded PDF and overlay
     policyViewer.innerHTML = `
@@ -29,7 +41,7 @@ window.createVigagencyCOI = function(policyData) {
                         <i class="fas fa-file-contract"></i> ACORD 25 Certificate of Insurance
                     </h2>
                     <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">
-                        Policy: ${policy.policy_number || 'N/A'} | ${policy.carrier || 'N/A'}
+                        Policy: ${policy.policyNumber || 'N/A'} | ${policy.carrier || 'N/A'}
                     </p>
                 </div>
                 <div style="display: flex; gap: 12px;">
@@ -45,7 +57,7 @@ window.createVigagencyCOI = function(policyData) {
                     <button onclick="emailACORD('${policyId}')" class="btn-primary" style="background: rgba(255,255,255,0.2); border: 2px solid white; color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500;">
                         <i class="fas fa-envelope"></i> Email COI
                     </button>
-                    <button onclick="closeCOIModal()" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 2px solid white; color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                    <button onclick="backToPolicyView('${policyId}')" class="btn-secondary" style="background: rgba(255,255,255,0.1); border: 2px solid white; color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500;">
                         <i class="fas fa-arrow-left"></i> Back
                     </button>
                 </div>
@@ -57,7 +69,7 @@ window.createVigagencyCOI = function(policyData) {
                     <!-- PDF Embed -->
                     <embed
                         id="acordPdfEmbed"
-                        src="/ACORD_25_fillable.pdf#view=FitH&toolbar=1&navpanes=0&scrollbar=1&zoom=125"
+                        src="ACORD_25_fillable.pdf#view=FitH&toolbar=1&navpanes=0&scrollbar=1&zoom=125"
                         type="application/pdf"
                         width="100%"
                         height="100%"
@@ -85,16 +97,16 @@ window.createVigagencyCOI = function(policyData) {
                         </div>
 
                         <!-- Insured Name (if available) -->
-                        ${policy.insured_name || policy.client_name ? `
+                        ${client.name || policy.clientName ? `
                         <div style="position: absolute; top: 305px; left: 65px; font-family: Arial, sans-serif; font-size: 10px; font-weight: bold; color: #000; pointer-events: none;">
-                            ${policy.insured_name || policy.client_name}
+                            ${client.name || policy.clientName}
                         </div>
                         ` : ''}
 
                         <!-- Insured Address (if available) -->
-                        ${policy.address ? `
+                        ${client.address ? `
                         <div style="position: absolute; top: 322px; left: 65px; font-family: Arial, sans-serif; font-size: 10px; color: #000; pointer-events: none;">
-                            ${policy.address}
+                            ${client.address}
                         </div>
                         ` : ''}
 
@@ -106,23 +118,23 @@ window.createVigagencyCOI = function(policyData) {
                         ` : ''}
 
                         <!-- Policy Number -->
-                        ${policy.policy_number ? `
+                        ${policy.policyNumber ? `
                         <div style="position: absolute; top: 550px; left: 530px; font-family: Arial, sans-serif; font-size: 9px; color: #000; pointer-events: none;">
-                            ${policy.policy_number}
+                            ${policy.policyNumber}
                         </div>
                         ` : ''}
 
                         <!-- Effective Date -->
-                        ${policy.effective_date ? `
+                        ${policy.effectiveDate ? `
                         <div style="position: absolute; top: 550px; left: 640px; font-family: Arial, sans-serif; font-size: 9px; color: #000; pointer-events: none;">
-                            ${policy.effective_date}
+                            ${policy.effectiveDate}
                         </div>
                         ` : ''}
 
                         <!-- Expiration Date -->
-                        ${policy.expiration_date ? `
+                        ${policy.expirationDate ? `
                         <div style="position: absolute; top: 550px; left: 720px; font-family: Arial, sans-serif; font-size: 9px; color: #000; pointer-events: none;">
-                            ${policy.expiration_date}
+                            ${policy.expirationDate}
                         </div>
                         ` : ''}
 
@@ -174,7 +186,7 @@ window.toggleOverlay = function() {
 // The rest of the functions remain the same
 window.downloadACORD = function() {
     const link = document.createElement('a');
-    link.href = '/ACORD_25_fillable.pdf';
+    link.href = 'ACORD_25_fillable.pdf';
     link.download = 'ACORD_25_Certificate.pdf';
     link.style.display = 'none';
     document.body.appendChild(link);
@@ -187,7 +199,7 @@ window.printACORD = function() {
     if (embed && embed.contentWindow) {
         embed.contentWindow.print();
     } else {
-        const printWindow = window.open('/ACORD_25_fillable.pdf', '_blank');
+        const printWindow = window.open('ACORD_25_fillable.pdf', '_blank');
         if (printWindow) {
             printWindow.onload = () => {
                 printWindow.print();
@@ -198,8 +210,8 @@ window.printACORD = function() {
 
 window.emailACORD = function(policyId) {
     const policy = window.currentCOIPolicy;
-    const subject = `Certificate of Insurance - Policy ${policy.policy_number || policyId}`;
-    const body = `Please find attached the Certificate of Insurance for policy ${policy.policy_number || policyId}.
+    const subject = `Certificate of Insurance - Policy ${policy.policyNumber || policyId}`;
+    const body = `Please find attached the Certificate of Insurance for policy ${policy.policyNumber || policyId}.
 
 Policy Details:
 - Carrier: ${policy.carrier || 'N/A'}

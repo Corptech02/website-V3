@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔍 Test Button Visibility</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; margin: 8px; }
+        .log { font-family: monospace; font-size: 13px; background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; border-radius: 4px; height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test DOT Button Visibility for Lead 150420</h1>
+        <p>This will check why the DOT lookup button isn't showing for lead 150420.</p>
+
+        <button class="button" onclick="checkLead150420()">🔍 Check Lead 150420</button>
+        <button class="button" onclick="forceShowButton()">🔧 Force Show Button</button>
+
+        <div id="log" class="log">Ready to check lead data...</div>
+    </div>
+
+    <script>
+        function log(message, color = '#333') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.style.color = color;
+            div.innerHTML = `[${timestamp}] ${message}`;
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function checkLead150420() {
+            log('🔍 Checking lead 150420 data...', '#0066cc');
+
+            try {
+                const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                const lead150420 = leads.find(l => l.id === '150420' || l.id === 150420);
+
+                if (lead150420) {
+                    log('✅ Found lead 150420:', '#28a745');
+                    log(`   Name: ${lead150420.name}`, '#666');
+                    log(`   DOT Number: "${lead150420.dotNumber || 'EMPTY'}"`, lead150420.dotNumber ? '#28a745' : '#dc3545');
+                    log(`   DOT type: ${typeof lead150420.dotNumber}`, '#666');
+                    log(`   DOT truthy: ${!!lead150420.dotNumber}`, '#666');
+
+                    // Check button visibility logic
+                    const shouldShow = lead150420.dotNumber ? 'flex' : 'none';
+                    log(`   Button display should be: ${shouldShow}`, shouldShow === 'flex' ? '#28a745' : '#dc3545');
+
+                    // Show full lead object
+                    log('📊 Full lead object:', '#666');
+                    log(JSON.stringify(lead150420, null, 2), '#666');
+
+                } else {
+                    log('❌ Lead 150420 not found in localStorage', '#dc3545');
+                    log(`   Total leads in storage: ${leads.length}`, '#666');
+
+                    // Show available IDs
+                    const ids = leads.map(l => l.id).slice(0, 10);
+                    log(`   First 10 lead IDs: ${ids.join(', ')}`, '#666');
+                }
+
+            } catch (error) {
+                log(`❌ Error reading localStorage: ${error.message}`, '#dc3545');
+            }
+        }
+
+        function forceShowButton() {
+            log('🔧 Testing button display with forced DOT number...', '#0066cc');
+
+            const testLead = {
+                id: '150420',
+                name: 'GOLDS CUSTOM SERVICE MARIA MICEK',
+                dotNumber: '3833739'
+            };
+
+            // Test the button visibility logic
+            const buttonDisplay = testLead.dotNumber ? 'flex' : 'none';
+            log(`✅ With DOT "${testLead.dotNumber}", button display: ${buttonDisplay}`, '#28a745');
+
+            // Create a test button to see if it appears
+            const buttonHTML = `
+                <button onclick="alert('Button works!')" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; display: ${buttonDisplay}; align-items: center; gap: 6px;" title="Manual DOT lookup for ${testLead.dotNumber}">
+                    <i class="fas fa-search"></i> DOT Lookup
+                </button>
+            `;
+
+            log('🧪 Test button HTML:', '#666');
+            log(buttonHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;'), '#666');
+
+            // Actually create the button
+            const buttonContainer = document.createElement('div');
+            buttonContainer.innerHTML = `<h4>Test Button:</h4>${buttonHTML}`;
+            buttonContainer.style.marginTop = '20px';
+            buttonContainer.style.padding = '15px';
+            buttonContainer.style.background = '#f8f9fa';
+            buttonContainer.style.borderRadius = '6px';
+
+            document.querySelector('.container').appendChild(buttonContainer);
+            log('✅ Test button created above', '#28a745');
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkLead150420();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

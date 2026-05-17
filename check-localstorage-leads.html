@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check LocalStorage Leads</title>
+</head>
+<body>
+    <h1>🔍 LocalStorage Leads Inspector</h1>
+
+    <button onclick="checkLeads()" style="padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 4px;">
+        Check Insurance Leads
+    </button>
+
+    <button onclick="manualDOTTrigger()" style="padding: 10px 20px; margin: 10px; background: #28a745; color: white; border: none; border-radius: 4px;">
+        Manual DOT Trigger
+    </button>
+
+    <button onclick="findDOT3833739()" style="padding: 10px 20px; margin: 10px; background: #dc3545; color: white; border: none; border-radius: 4px;">
+        Find DOT 3833739
+    </button>
+
+    <div id="results" style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 4px; max-height: 500px; overflow-y: auto;">
+        <h3>Results:</h3>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#333',
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107'
+            };
+
+            output.innerHTML += `
+                <div style="margin: 5px 0; padding: 8px; border-left: 3px solid ${colors[type]}; background: rgba(0,0,0,0.05);">
+                    <span style="color: #666; font-size: 0.8em;">[${timestamp}]</span>
+                    <span style="color: ${colors[type]};">${message}</span>
+                </div>
+            `;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function checkLeads() {
+            log('📋 Checking localStorage insurance_leads...', 'info');
+
+            try {
+                const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                log(`Found ${leads.length} leads in localStorage`, 'success');
+
+                if (leads.length > 0) {
+                    // Show first few leads
+                    const leadsToShow = leads.slice(-5); // Show last 5 leads
+                    leadsToShow.forEach((lead, index) => {
+                        log(`Lead ${index + 1}: ${lead.name || 'Unnamed'} | DOT: ${lead.dotNumber || 'None'} | ID: ${lead.id || 'No ID'}`, 'info');
+
+                        // Check if it has timestamp info
+                        const createdAt = lead.createdAt || 'No createdAt';
+                        const lastUpdated = lead.lastUpdated || 'No lastUpdated';
+                        log(`  ⏰ Created: ${createdAt} | Updated: ${lastUpdated}`, 'info');
+                    });
+                } else {
+                    log('No leads found in localStorage', 'warning');
+                }
+            } catch (error) {
+                log('Error reading localStorage: ' + error.message, 'error');
+            }
+        }
+
+        function findDOT3833739() {
+            log('🎯 Searching for DOT 3833739...', 'info');
+
+            try {
+                const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                const dotLead = leads.find(lead => lead.dotNumber == '3833739');
+
+                if (dotLead) {
+                    log('✅ Found lead with DOT 3833739!', 'success');
+                    log('📋 Lead data: ' + JSON.stringify(dotLead, null, 2), 'info');
+
+                    // Check if it would qualify for DOT lookup
+                    const recentCutoff = Date.now() - (5 * 60 * 1000); // 5 minutes ago
+                    const leadTimestamp = new Date(dotLead.createdAt || dotLead.lastUpdated || 0).getTime();
+                    const isRecent = leadTimestamp > recentCutoff || !dotLead.yearsInBusiness;
+
+                    log(`⏰ Lead timestamp: ${leadTimestamp} (${new Date(leadTimestamp).toLocaleString()})`, 'info');
+                    log(`🕐 Recent cutoff: ${recentCutoff} (${new Date(recentCutoff).toLocaleString()})`, 'info');
+                    log(`✅ Qualifies for DOT lookup: ${isRecent ? 'Yes' : 'No'}`, isRecent ? 'success' : 'warning');
+
+                    if (!isRecent) {
+                        log(`Reason: Not recent (${Math.round((Date.now() - leadTimestamp) / 1000 / 60)} minutes old) and has yearsInBusiness: "${dotLead.yearsInBusiness}"`, 'warning');
+                    }
+                } else {
+                    log('❌ Lead with DOT 3833739 not found in localStorage', 'error');
+                }
+            } catch (error) {
+                log('Error searching for DOT: ' + error.message, 'error');
+            }
+        }
+
+        function manualDOTTrigger() {
+            log('🚛 Manually triggering DOT lookup...', 'info');
+
+            // Check if functions are available
+            if (typeof window.performDOTLookupForLead === 'function') {
+                log('✅ performDOTLookupForLead function available', 'success');
+
+                // Try to trigger for DOT 3833739
+                const testLeadId = 'manual-test-' + Date.now();
+                log(`🔍 Testing DOT lookup for lead ${testLeadId} with DOT 3833739`, 'info');
+
+                window.performDOTLookupForLead(testLeadId, '3833739')
+                    .then(result => {
+                        if (result) {
+                            log('✅ Manual DOT lookup successful!', 'success');
+                            log('Result: ' + JSON.stringify(result, null, 2), 'success');
+                        } else {
+                            log('⚠️ Manual DOT lookup returned null', 'warning');
+                        }
+                    })
+                    .catch(error => {
+                        log('❌ Manual DOT lookup failed: ' + error.message, 'error');
+                    });
+            } else {
+                log('❌ performDOTLookupForLead function not available', 'error');
+            }
+
+            // Also check if triggerDOTLookupForNewLeads is available
+            if (typeof window.triggerDOTLookupForNewLeads === 'function') {
+                log('✅ triggerDOTLookupForNewLeads function available', 'success');
+                log('🚛 Calling triggerDOTLookupForNewLeads...', 'info');
+                window.triggerDOTLookupForNewLeads();
+            } else {
+                log('❌ triggerDOTLookupForNewLeads function not available', 'error');
+            }
+        }
+
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkLeads();
+                findDOT3833739();
+            }, 1000);
+        });
+    </script>
+
+    <!-- Load the integration scripts -->
+    <script src="js/vicidial-import-listener.js"></script>
+    <script src="js/vicidial-dot-lookup-integration.js"></script>
+</body>
+</html>

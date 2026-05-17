@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test UI Fields with DOT Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 8px; }
+        .button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 Test UI Fields with DOT Data</h1>
+        <p>This page tests that the DOT lookup data now appears correctly in the lead profile UI.</p>
+
+        <button class="button" onclick="setupTestData()">1. Setup Test Lead with DOT Data</button>
+        <button class="button" onclick="openLeadProfile()">2. Open Lead Profile</button>
+        <button class="button" onclick="checkStoredData()">3. Check Stored Data</button>
+
+        <div id="results" style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; background: #f9f9f9;">
+            <h3>Results:</h3>
+            <div id="output">Ready to test...</div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `<div style="margin: 5px 0; padding: 8px; border-left: 3px solid #007bff; background: rgba(0,123,255,0.1);"><span style="color: #666;">[${timestamp}]</span> ${message}</div>`;
+        }
+
+        function setupTestData() {
+            log('🔨 Setting up test lead with DOT data...');
+
+            // Create a test lead with DOT lookup data (simulating successful lookup)
+            const testLead = {
+                id: '150420',
+                name: 'GOLDS CUSTOM SERVICES INC',
+                contact: 'MARIA MICEK',
+                phone: '8155883712',
+                email: 'test@example.com',
+                dotNumber: '3833739',
+                state: 'IN',  // This should appear in green background
+                yearsInBusiness: '10-15 years',  // This should appear in green background
+                commodityHauled: 'General Freight',  // This should appear in green background
+                stage: 'New Lead',
+                createdAt: new Date().toISOString()
+            };
+
+            // Store in localStorage
+            let leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+
+            // Remove any existing test lead
+            leads = leads.filter(lead => lead.id !== '150420');
+
+            // Add the test lead
+            leads.push(testLead);
+
+            localStorage.setItem('insurance_leads', JSON.stringify(leads));
+
+            log('✅ Test lead created with DOT data:');
+            log(`   Company: ${testLead.name}`);
+            log(`   DOT: ${testLead.dotNumber}`);
+            log(`   State: ${testLead.state} (should show green background)`);
+            log(`   Years in Business: ${testLead.yearsInBusiness} (should show green background)`);
+            log(`   Commodity: ${testLead.commodityHauled} (should show green background)`);
+        }
+
+        function openLeadProfile() {
+            log('👁️ Opening lead profile...');
+
+            // Check if we're on the main page with the profile function
+            if (window.parent && window.parent.viewLead) {
+                log('📱 Found viewLead function in parent window');
+                window.parent.viewLead('150420');
+            } else if (window.viewLead) {
+                log('📱 Found viewLead function in current window');
+                window.viewLead('150420');
+            } else {
+                log('❌ viewLead function not found');
+                log('💡 You need to open this test from the main Vanguard application');
+                log('💡 Or click this link: <a href="/var/www/vanguard/index.html" target="_blank">Open Main App</a>');
+            }
+        }
+
+        function checkStoredData() {
+            log('🔍 Checking stored lead data...');
+
+            const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+            const testLead = leads.find(lead => lead.id === '150420');
+
+            if (testLead) {
+                log('✅ Found test lead in localStorage:');
+                log(`   ID: ${testLead.id}`);
+                log(`   Name: ${testLead.name}`);
+                log(`   DOT: ${testLead.dotNumber || 'NOT SET'}`);
+                log(`   State: ${testLead.state || 'NOT SET'}`);
+                log(`   Years in Business: ${testLead.yearsInBusiness || 'NOT SET'}`);
+                log(`   Commodity: ${testLead.commodityHauled || 'NOT SET'}`);
+
+                const hasAllDOTData = testLead.state && testLead.yearsInBusiness && testLead.commodityHauled;
+                if (hasAllDOTData) {
+                    log('🎉 All DOT data is present - UI should show green backgrounds!');
+                } else {
+                    log('⚠️ Some DOT data is missing');
+                }
+            } else {
+                log('❌ Test lead not found. Click "Setup Test Data" first.');
+            }
+        }
+
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('🚀 Page loaded. Ready to test UI field display.');
+                log('📋 Step 1: Click "Setup Test Data" to create a lead with DOT data');
+                log('📋 Step 2: Click "Open Lead Profile" to view the profile');
+                log('📋 Step 3: Look for green backgrounds on State, Years, and Commodity fields');
+            }, 500);
+        });
+    </script>
+</body>
+</html>

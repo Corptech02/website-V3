@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Profile Update with DOT Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 8px; font-size: 16px; }
+        .button:hover { background: #0056b3; }
+        .button.success { background: #28a745; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; }
+        .log { font-family: monospace; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 Test Profile Update with DOT Data</h1>
+        <p>This page tests the complete workflow: DOT lookup → localStorage update → Profile display with green backgrounds</p>
+
+        <div class="section">
+            <h2>Step 1: Trigger DOT Lookup</h2>
+            <button class="button success" onclick="triggerDOTLookup()">🎯 Trigger DOT Lookup for Lead 150420</button>
+            <div id="lookupResults" class="log"></div>
+        </div>
+
+        <div class="section">
+            <h2>Step 2: Open Updated Profile</h2>
+            <button class="button" onclick="openProfileWithUpdatedData()">👁️ Open Lead Profile (Should Show Green Fields)</button>
+            <div id="profileResults" class="log"></div>
+        </div>
+
+        <div class="section">
+            <h2>Step 3: Verify Data in localStorage</h2>
+            <button class="button" onclick="verifyStoredData()">🔍 Check localStorage Data</button>
+            <div id="storageResults" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Load the DOT lookup hook -->
+    <script src="js/auto-dot-lookup-hook.js?v=3"></script>
+
+    <script>
+        function log(containerId, message, style = '') {
+            const container = document.getElementById(containerId);
+            const timestamp = new Date().toLocaleTimeString();
+            container.innerHTML += `<div style="margin: 5px 0; padding: 8px; ${style}">[${timestamp}] ${message}</div>`;
+        }
+
+        async function triggerDOTLookup() {
+            log('lookupResults', '🚛 Triggering DOT lookup for lead 150420 with DOT 3833739...', 'background: #e8f4fd;');
+
+            try {
+                // Ensure the lead exists in localStorage
+                let leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                let leadExists = leads.find(lead => lead.id === '150420');
+
+                if (!leadExists) {
+                    // Create the lead if it doesn't exist
+                    const testLead = {
+                        id: '150420',
+                        name: 'GOLDS CUSTOM SERVICE MARIA MICEK',
+                        contact: 'GOLDS CUSTOM SERVICE',
+                        phone: '(815) 588-3712',
+                        email: 'GOLDSCUSTOMSERVICES@GMAIL.COM',
+                        dotNumber: '3833739',
+                        stage: 'New',
+                        createdAt: new Date().toISOString()
+                    };
+
+                    leads.push(testLead);
+                    localStorage.setItem('insurance_leads', JSON.stringify(leads));
+                    log('lookupResults', '✅ Created test lead in localStorage', 'color: #28a745;');
+                }
+
+                // Trigger the manual DOT lookup
+                if (window.manualDOTLookupTrigger) {
+                    log('lookupResults', '🎯 Calling manualDOTLookupTrigger...', '');
+
+                    const result = await window.manualDOTLookupTrigger('150420', '3833739');
+
+                    log('lookupResults', '⏳ DOT lookup triggered, waiting for completion...', 'color: #ffc107;');
+
+                    // Wait and check results
+                    setTimeout(() => {
+                        const updatedLeads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                        const updatedLead = updatedLeads.find(lead => lead.id === '150420');
+
+                        if (updatedLead) {
+                            log('lookupResults', '📋 Checking updated lead data:', 'background: #f0f9ff;');
+                            log('lookupResults', `  • State: ${updatedLead.state || 'NOT SET'}`, updatedLead.state ? 'color: #28a745;' : 'color: #dc3545;');
+                            log('lookupResults', `  • Years in Business: ${updatedLead.yearsInBusiness || 'NOT SET'}`, updatedLead.yearsInBusiness ? 'color: #28a745;' : 'color: #dc3545;');
+                            log('lookupResults', `  • Commodity: ${updatedLead.commodityHauled || 'NOT SET'}`, updatedLead.commodityHauled ? 'color: #28a745;' : 'color: #dc3545;');
+
+                            if (updatedLead.state && updatedLead.yearsInBusiness && updatedLead.commodityHauled) {
+                                log('lookupResults', '🎉 SUCCESS: All DOT data populated! Green backgrounds should now appear in profile.', 'background: #d4edda; color: #155724; font-weight: bold;');
+                            } else {
+                                log('lookupResults', '⚠️ Some DOT data is still missing', 'color: #ffc107;');
+                            }
+                        }
+                    }, 3000);
+
+                } else {
+                    log('lookupResults', '❌ manualDOTLookupTrigger function not available', 'color: #dc3545;');
+                    log('lookupResults', '💡 Auto-hook may not be loaded', 'color: #6c757d;');
+                }
+
+            } catch (error) {
+                log('lookupResults', `❌ Error: ${error.message}`, 'color: #dc3545;');
+            }
+        }
+
+        function openProfileWithUpdatedData() {
+            log('profileResults', '👁️ Attempting to open lead profile...', '');
+
+            // Check if we can open the profile
+            if (window.parent && window.parent.viewLead) {
+                log('profileResults', '📱 Found viewLead in parent window', 'color: #28a745;');
+                window.parent.viewLead('150420');
+            } else if (window.viewLead) {
+                log('profileResults', '📱 Found viewLead in current window', 'color: #28a745;');
+                window.viewLead('150420');
+            } else {
+                log('profileResults', '❌ viewLead function not found', 'color: #dc3545;');
+                log('profileResults', '💡 You need to run this test from the main Vanguard application', 'color: #6c757d;');
+                log('profileResults', '💡 Then manually click the eye icon for lead 150420 to see the green backgrounds', 'color: #6c757d;');
+            }
+        }
+
+        function verifyStoredData() {
+            log('storageResults', '🔍 Checking localStorage data for lead 150420...', '');
+
+            try {
+                const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                const lead = leads.find(l => l.id === '150420');
+
+                if (lead) {
+                    log('storageResults', '✅ Lead found in localStorage:', 'color: #28a745;');
+                    log('storageResults', `  • ID: ${lead.id}`, '');
+                    log('storageResults', `  • Name: ${lead.name}`, '');
+                    log('storageResults', `  • DOT: ${lead.dotNumber || 'NOT SET'}`, '');
+                    log('storageResults', `  • State: ${lead.state || 'NOT SET'}`, lead.state ? 'background: #e8f5e8;' : 'background: #f8d7da;');
+                    log('storageResults', `  • Years: ${lead.yearsInBusiness || 'NOT SET'}`, lead.yearsInBusiness ? 'background: #e8f5e8;' : 'background: #f8d7da;');
+                    log('storageResults', `  • Commodity: ${lead.commodityHauled || 'NOT SET'}`, lead.commodityHauled ? 'background: #e8f5e8;' : 'background: #f8d7da;');
+
+                    // Show what the profile template will generate
+                    log('storageResults', '📱 Profile template will show:', 'background: #f0f9ff; font-weight: bold;');
+                    log('storageResults', `  • State field: background-color: ${lead.state ? '#e8f5e8' : '#fff'}`, lead.state ? 'background: #e8f5e8;' : 'background: #fff;');
+                    log('storageResults', `  • Years field: background-color: ${lead.yearsInBusiness ? '#e8f5e8' : '#fff'}`, lead.yearsInBusiness ? 'background: #e8f5e8;' : 'background: #fff;');
+                    log('storageResults', `  • Commodity field: background-color: ${lead.commodityHauled ? '#e8f5e8' : '#fff'}`, lead.commodityHauled ? 'background: #e8f5e8;' : 'background: #fff;');
+
+                } else {
+                    log('storageResults', '❌ Lead 150420 not found in localStorage', 'color: #dc3545;');
+                    log('storageResults', '💡 Run Step 1 first to create and populate the lead', 'color: #6c757d;');
+                }
+            } catch (error) {
+                log('storageResults', `❌ Error reading localStorage: ${error.message}`, 'color: #dc3545;');
+            }
+        }
+
+        // Auto-check on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('storageResults', '🚀 Page loaded. Auto-checking current state...', 'background: #e8f4fd;');
+                verifyStoredData();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

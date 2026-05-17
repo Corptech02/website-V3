@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test DOT Trigger Direct</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 8px; }
+        .log { font-family: monospace; font-size: 14px; background: #f8f9fa; padding: 15px; border-radius: 4px; height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 Direct DOT Trigger Test</h1>
+        <p>This will simulate exactly what should happen when a lead with DOT number is imported.</p>
+
+        <button class="button" onclick="testDirectTrigger()">🎯 Test Direct DOT Trigger</button>
+
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Load the auto-hook -->
+    <script src="js/auto-dot-lookup-hook.js?v=3"></script>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Override console.log to capture all messages
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            const message = args.join(' ');
+            if (message.includes('DOT') || message.includes('BUILT-IN') || message.includes('AUTO')) {
+                log('📋 CONSOLE: ' + message);
+            }
+        };
+
+        async function testDirectTrigger() {
+            log('🚀 Starting direct DOT trigger test...');
+
+            // Step 1: Create test lead exactly like Vicidial import would
+            const testLead = {
+                id: '150420',
+                name: 'GOLDS CUSTOM SERVICE MARIA MICEK',
+                contact: 'GOLDS CUSTOM SERVICE',
+                phone: '(815) 588-3712',
+                email: 'GOLDSCUSTOMSERVICES@GMAIL.COM',
+                dotNumber: '3833739', // This should trigger DOT lookup
+                stage: 'New',
+                createdAt: new Date().toISOString(),
+                notes: 'Imported from ViciDial (List 1006) - Quick Import'
+            };
+
+            log('📝 Created test lead with DOT number: ' + testLead.dotNumber);
+
+            // Step 2: Store in localStorage (this should trigger the auto-hook)
+            try {
+                let leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+
+                // Remove any existing lead with same ID
+                leads = leads.filter(lead => lead.id !== '150420');
+
+                // Add the new lead
+                leads.push(testLead);
+
+                log('💾 Storing lead in localStorage (should trigger auto-hook)...');
+
+                // This localStorage.setItem call should trigger the auto-hook
+                localStorage.setItem('insurance_leads', JSON.stringify(leads));
+
+                log('✅ Lead stored in localStorage');
+
+                // Step 3: Wait and check if DOT lookup was triggered
+                setTimeout(() => {
+                    log('🔍 Checking if DOT lookup was triggered...');
+
+                    const updatedLeads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                    const updatedLead = updatedLeads.find(lead => lead.id === '150420');
+
+                    if (updatedLead) {
+                        log('📊 Checking updated lead data:');
+                        log(`   State: "${updatedLead.state || 'NOT SET'}"`);
+                        log(`   Years in Business: "${updatedLead.yearsInBusiness || 'NOT SET'}"`);
+                        log(`   Commodity Hauled: "${updatedLead.commodityHauled || 'NOT SET'}"`);
+
+                        if (updatedLead.state || updatedLead.yearsInBusiness || updatedLead.commodityHauled) {
+                            log('🎉 SUCCESS: DOT data was populated!');
+                        } else {
+                            log('❌ FAILURE: DOT data was NOT populated');
+                            log('💡 Checking possible causes...');
+
+                            // Check if auto-hook functions exist
+                            if (window.manualDOTLookupTrigger) {
+                                log('✅ manualDOTLookupTrigger function exists');
+                                log('🔧 Trying manual trigger as backup...');
+
+                                window.manualDOTLookupTrigger('150420', '3833739')
+                                    .then(result => {
+                                        log('📞 Manual trigger completed');
+
+                                        setTimeout(() => {
+                                            const finalLeads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                                            const finalLead = finalLeads.find(lead => lead.id === '150420');
+
+                                            if (finalLead) {
+                                                log('📊 Final check after manual trigger:');
+                                                log(`   State: "${finalLead.state || 'STILL NOT SET'}"`);
+                                                log(`   Years: "${finalLead.yearsInBusiness || 'STILL NOT SET'}"`);
+                                                log(`   Commodity: "${finalLead.commodityHauled || 'STILL NOT SET'}"`);
+                                            }
+                                        }, 2000);
+                                    })
+                                    .catch(error => {
+                                        log(`❌ Manual trigger error: ${error.message}`);
+                                    });
+                            } else {
+                                log('❌ manualDOTLookupTrigger function does NOT exist');
+                                log('💡 Auto-hook script may not be loaded properly');
+                            }
+
+                            // Check if localStorage hook exists
+                            const setItemStr = localStorage.setItem.toString();
+                            if (setItemStr.includes('insurance_leads')) {
+                                log('✅ localStorage.setItem is hooked');
+                            } else {
+                                log('❌ localStorage.setItem is NOT hooked');
+                                log('💡 Auto-hook is not intercepting localStorage updates');
+                            }
+                        }
+                    }
+                }, 3000);
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+            }
+        }
+
+        // Check auto-hook status on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('🔧 Checking auto-hook status on load...');
+
+                if (window.debugDOTLookupHook) {
+                    log('✅ debugDOTLookupHook function available');
+                    const status = window.debugDOTLookupHook();
+                    log(`📊 Auto-hook status: ${JSON.stringify(status)}`);
+                } else {
+                    log('❌ debugDOTLookupHook function NOT available');
+                }
+
+                if (window.manualDOTLookupTrigger) {
+                    log('✅ manualDOTLookupTrigger function available');
+                } else {
+                    log('❌ manualDOTLookupTrigger function NOT available');
+                }
+
+                // Check localStorage hook
+                const setItemStr = localStorage.setItem.toString();
+                if (setItemStr.includes('insurance_leads')) {
+                    log('✅ localStorage is hooked for auto DOT lookup');
+                } else {
+                    log('❌ localStorage is NOT hooked - auto DOT lookup will not work');
+                }
+
+                log('🚀 Ready to test. Click button to simulate lead import with DOT lookup.');
+
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

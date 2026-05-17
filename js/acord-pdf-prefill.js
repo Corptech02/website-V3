@@ -11,12 +11,23 @@ if (!window.PDFLib) {
     document.head.appendChild(script);
 }
 
-// Function to fill ACORD PDF with policy data (Vigagency version)
-async function fillACORDPDF(policyData) {
-    console.log('📝 Filling ACORD PDF with vigagency policy data...', policyData);
+// Function to fill ACORD PDF with policy data
+async function fillACORDPDF(policyId) {
+    console.log('📝 Filling ACORD PDF with policy data...');
 
-    // Use the policy data directly (passed from vigagency modal)
-    const policy = policyData;
+    // Get policy data
+    const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+    const policy = policies.find(p =>
+        p.policyNumber === policyId ||
+        p.id === policyId ||
+        String(p.policyNumber) === String(policyId) ||
+        String(p.id) === String(policyId)
+    );
+
+    if (!policy) {
+        console.error('Policy not found');
+        return;
+    }
 
     // Extract all policy data
     const data = {
@@ -27,17 +38,23 @@ async function fillACORDPDF(policyData) {
         producerFax: '(555) 123-4568',
         producerEmail: 'coi@vanguardins.com',
 
-        // Insured Information (Vigagency structure)
-        insuredName: policy.insured_name || policy.client_name || '',
-        insuredAddress: policy.address || '',
-        insuredPhone: policy.client_phone || '',
-        insuredEmail: policy.client_email || '',
+        // Insured Information
+        insuredName: policy.clientName ||
+                    policy.insured?.['Name/Business Name'] ||
+                    policy.insured?.['Primary Named Insured'] ||
+                    '',
+        insuredAddress: [
+            policy.insured?.['Address'] || policy.address || '',
+            policy.insured?.['City'] || policy.city || '',
+            (policy.insured?.['State'] || policy.state || '') + ' ' +
+            (policy.insured?.['Zip'] || policy.zip || '')
+        ].filter(Boolean).join('\n'),
 
         // Policy Information
-        policyNumber: policy.policy_number || policy.id || '',
-        carrier: policy.carrier || '',
-        effectiveDate: formatDate(policy.effective_date),
-        expirationDate: formatDate(policy.expiration_date),
+        policyNumber: policy.policyNumber || policy.id || '',
+        carrier: policy.carrier || policy.overview?.['Carrier'] || '',
+        effectiveDate: formatDate(policy.effectiveDate || policy.overview?.['Effective Date']),
+        expirationDate: formatDate(policy.expirationDate || policy.overview?.['Expiration Date']),
 
         // Coverage Limits
         generalLiability: {
@@ -87,7 +104,7 @@ async function fillACORDPDF(policyData) {
     };
 
     // Display pre-filled data in the viewer
-    displayPrefilledACORD(policy.id || policy.policy_number, data);
+    displayPrefilledACORD(policyId, data);
 }
 
 // Format date to MM/DD/YYYY
@@ -170,57 +187,14 @@ function displayPrefilledACORD(policyId, data) {
                     📄 ACORD 25 Certificate (Pre-filled)
                 </h3>
 
-                <!-- PDF Viewer with Multiple Options -->
-                <div style="width: 100%; min-height: 800px; background: white; border-radius: 5px; position: relative;">
-
-                    <!-- Primary PDF Viewer -->
-                    <object
-                        id="acord-pdf-object"
-                        data="/ACORD_25_fillable.pdf"
-                        type="application/pdf"
-                        width="100%"
-                        height="800px"
-                        style="border: none; border-radius: 5px;">
-
-                        <!-- Fallback: Embed Element -->
-                        <embed
-                            id="acord-pdf-embed"
-                            src="/ACORD_25_fillable.pdf#zoom=100&toolbar=1&navpanes=0"
-                            type="application/pdf"
-                            width="100%"
-                            height="800px"
-                            style="border: none;"
-                            title="ACORD 25 Certificate of Insurance">
-
-                            <!-- Final Fallback: Manual Links -->
-                            <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 5px; margin: 10px;">
-                                <i class="fas fa-file-pdf fa-3x" style="color: #dc3545; margin-bottom: 20px;"></i>
-                                <h4 style="color: #333; margin-bottom: 20px;">PDF Viewer Not Available</h4>
-                                <p style="color: #666; margin-bottom: 30px;">Your browser doesn't support embedded PDFs. Use the options below:</p>
-
-                                <div style="margin: 20px 0;">
-                                    <a href="/ACORD_25_fillable.pdf" target="_blank"
-                                       style="display: inline-block; background: #007bff; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 10px;">
-                                        <i class="fas fa-external-link-alt"></i> Open PDF in New Tab
-                                    </a>
-
-                                    <a href="/ACORD_25_fillable.pdf" download="ACORD_25_${data.insuredName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf"
-                                       style="display: inline-block; background: #28a745; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 10px;">
-                                        <i class="fas fa-download"></i> Download PDF
-                                    </a>
-                                </div>
-
-                                <!-- Alternative: Show PDF with Google Viewer -->
-                                <div style="margin-top: 20px;">
-                                    <a href="https://docs.google.com/viewer?url=https://vigagency.com/ACORD_25_fillable.pdf&embedded=true" target="_blank"
-                                       style="display: inline-block; background: #6c757d; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 14px;">
-                                        <i class="fas fa-eye"></i> View with Google Docs
-                                    </a>
-                                </div>
-                            </div>
-                        </embed>
-                    </object>
-                </div>
+                <!-- PDF Viewer -->
+                <iframe
+                    id="acord-pdf-frame"
+                    src="acord-25.pdf"
+                    width="100%"
+                    height="800px"
+                    style="border: none; background: white;">
+                </iframe>
             </div>
 
             <!-- Action Buttons -->

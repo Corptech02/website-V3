@@ -1,0 +1,4688 @@
+/* Mobile-Specific Styles for Vanguard Insurance Platform */
+/* ========================================================= */
+
+/* Base Mobile Variables */
+:root {
+    --mobile-breakpoint-sm: 480px;
+    --mobile-breakpoint-md: 768px;
+    --mobile-breakpoint-lg: 1024px;
+    --mobile-header-height: 60px;
+    --mobile-nav-height: 56px;
+    --mobile-spacing: 12px;
+    --mobile-radius: 8px;
+}
+
+/* Global Mobile Overflow Prevention */
+@media (max-width: 768px) {
+    html {
+        overflow-x: hidden !important;
+        width: 100% !important;
+    }
+
+    body {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        position: relative !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    *, *::before, *::after {
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+    }
+
+    img, video, iframe {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    /* Specific fix for dashboard sections overflow */
+    .dashboard-sections > * {
+        max-width: calc(50vw - 8px) !important;
+        overflow: hidden !important;
+    }
+
+    .recent-activity *,
+    .upcoming-renewals * {
+        max-width: 100% !important;
+    }
+}
+
+/* Enhanced Mobile Navigation Toggle Button */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: 2px solid transparent;
+    font-size: 24px;
+    color: var(--dark);
+    cursor: pointer;
+    padding: 8px;
+    margin-left: -8px;
+    border-radius: var(--mobile-radius);
+    min-width: 44px;
+    min-height: 44px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.mobile-menu-toggle:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--primary);
+}
+
+.mobile-menu-toggle:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.mobile-menu-toggle:active {
+    background: rgba(59, 130, 246, 0.2);
+    transform: scale(0.95);
+}
+
+/* Accessible toggle state indication */
+.mobile-menu-toggle[aria-expanded="true"] {
+    background: var(--primary);
+    color: white;
+}
+
+.mobile-menu-toggle[aria-expanded="true"]:hover {
+    background: var(--primary);
+    opacity: 0.9;
+}
+
+/* Screen reader text for toggle button */
+.mobile-menu-toggle .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 995; /* Lower than mobile nav (997) */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* Allow clicks through when not active */
+}
+
+.mobile-overlay.active {
+    opacity: 1;
+    display: block;
+    pointer-events: auto; /* Enable clicks when active */
+}
+
+/* Tablet Styles (768px - 1024px) */
+@media (max-width: 1024px) {
+    /* Dashboard Adjustments */
+    .dashboard-sections {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+
+    /* Table Adjustments */
+    .data-table {
+        font-size: 14px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+    }
+
+    /* Modal Adjustments */
+    .modal-content {
+        width: 90%;
+        max-width: 600px;
+        margin: 20px auto;
+    }
+
+    /* Forms */
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+}
+
+/* Mobile Styles (max-width: 390px ONLY - does not affect desktop) */
+@media (max-width: 390px) {
+    /* Prevent horizontal scroll */
+    body {
+        overflow-x: hidden !important;
+        width: 100%;
+    }
+
+    /* Header Mobile - More Compact */
+    .header {
+        height: 50px;
+        padding: 0 8px;
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 998; /* Higher than nav (997) and overlay (996) */
+    }
+
+    .navbar {
+        height: 100%;
+    }
+
+    .nav-container {
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    /* Compact Brand Section */
+    .nav-brand {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 0; /* Allow shrinking */
+    }
+
+    .nav-brand .logo {
+        width: 30px;
+        height: 30px;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+
+    .nav-brand .brand-text {
+        overflow: hidden;
+    }
+
+    .nav-brand h1 {
+        font-size: 14px !important;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .nav-brand span {
+        display: none; /* Hide tagline on mobile */
+    }
+
+    /* Show mobile menu toggle */
+    .mobile-menu-toggle {
+        display: block;
+        padding: 6px;
+        font-size: 20px;
+    }
+
+    /* Compact nav actions */
+    .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .notification-btn {
+        padding: 6px;
+        font-size: 16px;
+        position: relative;
+    }
+
+    .notification-btn .badge {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        font-size: 9px;
+        padding: 2px 4px;
+        min-width: 14px;
+        height: 14px;
+        line-height: 10px;
+    }
+
+    .user-menu {
+        display: none; /* Hide user menu on mobile */
+    }
+
+    /* Hide desktop navigation */
+    .nav-menu {
+        display: none;
+    }
+
+    /* Enhanced Mobile Navigation Menu */
+    .mobile-nav {
+        position: fixed;
+        top: 50px; /* Match new header height */
+        left: -280px;
+        width: 260px;
+        height: calc(100vh - 50px);
+        background: var(--white);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+        z-index: 996; /* Above overlay (995) but below header (998) */
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        transform: translateZ(0); /* Force hardware acceleration */
+        border-right: 1px solid #e5e7eb;
+    }
+
+    .mobile-nav.active {
+        left: 0;
+        z-index: 996; /* Keep consistent z-index */
+    }
+
+    /* Add focus trap for accessibility */
+    .mobile-nav.active:focus-within {
+        outline: 2px solid var(--primary);
+        outline-offset: -2px;
+    }
+
+    .mobile-nav-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .mobile-nav-item {
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .mobile-nav-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        color: var(--dark);
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        position: relative;
+        z-index: 997; /* Ensure links are clickable */
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+        min-height: 44px; /* Touch target requirement */
+    }
+
+    /* Enhanced navigation states */
+    .mobile-nav-link:hover,
+    .mobile-nav-link.active {
+        background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+        color: var(--primary);
+        border-left: 3px solid var(--primary);
+    }
+
+    .mobile-nav-link:focus {
+        outline: 2px solid var(--primary);
+        outline-offset: -2px;
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    .mobile-nav-link:active {
+        background: rgba(59, 130, 246, 0.2);
+        transform: scale(0.98);
+    }
+
+    /* Current page indicator */
+    .mobile-nav-link[aria-current="page"] {
+        background: var(--primary);
+        color: white;
+        font-weight: 600;
+    }
+
+    .mobile-nav-link[aria-current="page"]::before {
+        content: "●";
+        margin-right: 8px;
+        font-size: 8px;
+    }
+
+    .mobile-nav-link i {
+        width: 18px;
+        margin-right: 10px;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    /* Mobile navigation section headers - CENTERED, BOLD, LARGER, BLUE */
+    .mobile-nav-section-header {
+        text-align: center !important;
+        padding: 12px 16px !important;
+        background: rgba(59, 130, 246, 0.1) !important; /* Light blue background */
+        border-bottom: 1px solid rgba(59, 130, 246, 0.2) !important;
+        margin: 0 !important;
+    }
+
+    .mobile-nav-section-header span {
+        font-size: 16px !important; /* Larger text */
+        font-weight: 700 !important; /* Bold */
+        color: #3b82f6 !important; /* Blue text */
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        display: block !important;
+    }
+
+    /* Make content-header stack vertically for mobile */
+    .content-header {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0 !important;
+    }
+
+    /* Header title first - bigger text and lower position */
+    .content-header h1 {
+        order: 1 !important;
+        margin: 15px 0 20px 0 !important;
+        width: 100% !important;
+        font-size: 28px !important;
+        font-weight: bold !important;
+    }
+
+    /* Lead tabs second */
+    .lead-tabs {
+        order: 2 !important;
+        width: 100% !important;
+        margin: 0 0 15px 0 !important;
+    }
+
+    /* Header actions third - below everything */
+    .header-actions {
+        order: 3 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+
+    /* Style action buttons for mobile - wider and shorter */
+    .header-actions .btn-primary,
+    .header-actions .btn-secondary,
+    .header-actions .toggle-button {
+        flex: 1 !important;
+        min-width: calc(50% - 3px) !important; /* Two buttons per row */
+        max-width: calc(50% - 3px) !important;
+        padding: 8px 4px !important; /* Shorter height, minimal side padding */
+        font-size: 11px !important;
+        border-radius: 4px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Specific adjustments for button text on mobile */
+    .header-actions .toggle-text {
+        font-size: 10px !important;
+    }
+
+    .header-actions i {
+        font-size: 9px !important;
+        margin-right: 3px !important;
+    }
+
+    /* Lead pipeline - make much smaller by 3x for mobile */
+    .lead-pipeline {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important; /* 2 columns instead of 5 */
+        gap: 4px !important;
+        margin: -15px 0 8px 0 !important; /* Bring it up higher with negative top margin */
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .pipeline-stage {
+        padding: 8px !important; /* Much smaller padding */
+        margin: 0 !important;
+        min-height: auto !important;
+        border-radius: 4px !important;
+    }
+
+    .stage-header {
+        margin-bottom: 4px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+
+    .stage-header h3 {
+        font-size: 11px !important; /* Much smaller text */
+        margin: 0 !important;
+        font-weight: 600 !important;
+    }
+
+    .stage-count {
+        font-size: 10px !important; /* Smaller count */
+        padding: 1px 4px !important;
+        border-radius: 2px !important;
+    }
+
+    .stage-value {
+        font-size: 9px !important; /* Much smaller value text */
+        margin: 2px 0 4px 0 !important;
+        font-weight: 500 !important;
+    }
+
+    .stage-bar {
+        height: 3px !important; /* Much thinner bar */
+        border-radius: 1px !important;
+        margin-top: 2px !important;
+    }
+
+    /* Make space for lead-stats above the table */
+    .data-table {
+        margin-top: 20px !important; /* Bring table up higher */
+    }
+
+    #leadsTable,
+    .leads-table,
+    .table-responsive {
+        margin-top: 20px !important; /* Bring leads table up higher */
+    }
+
+    .lead-stats {
+        margin-bottom: 15px !important; /* Space between stats and table */
+    }
+
+    /* Mobile optimizations for lead-stats cards - HIGHER POSITIONING */
+    .lead-stats,
+    div.lead-stats,
+    .dashboard-content .lead-stats,
+    .main-content .lead-stats {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important; /* 2 columns on mobile */
+        gap: 8px !important;
+        padding: 0 4px !important;
+        margin: 15px 0 15px 0 !important; /* Bring up much higher */
+        margin-top: 15px !important; /* Small top margin */
+        padding-top: 10px !important; /* Minimal top spacing */
+        position: relative !important;
+        top: 10px !important; /* Minimal position adjustment */
+    }
+
+    .stat-card {
+        padding: 8px !important; /* Smaller padding for mobile */
+        border-radius: 6px !important;
+        margin: 0 !important;
+    }
+
+    .stat-card .stat-content h4 {
+        font-size: 11px !important; /* Smaller title */
+        margin-bottom: 4px !important;
+    }
+
+    .stat-card .stat-number {
+        font-size: 16px !important; /* Smaller numbers */
+        margin: 2px 0 !important;
+    }
+
+    .stat-card .stat-trend {
+        font-size: 9px !important; /* Much smaller trend text */
+    }
+
+    .stat-icon {
+        width: 24px !important; /* Smaller icons */
+        height: 24px !important;
+        font-size: 12px !important;
+    }
+
+    /* Ensure lead tabs and header are properly ordered */
+    h1 {
+        order: 1 !important;
+    }
+
+    .lead-tabs {
+        order: 2 !important;
+        margin: 8px 0 4px 0 !important; /* Reduced bottom margin */
+    }
+
+    /* Sidebar Adjustments */
+    .sidebar {
+        position: fixed;
+        left: -260px;
+        width: 260px;
+        height: 100vh;
+        z-index: 997;
+        transition: left 0.3s ease;
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+
+    /* Main Content Adjustments - Compact with proper containment */
+    .dashboard-content {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 6px !important;
+        padding-top: 56px !important; /* Original value restored */
+        padding-bottom: 66px !important; /* Space for bottom nav */
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 6px !important;
+        padding-top: 56px !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    /* Ensure all sections stay within viewport */
+    section, .section {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    /* Page Headers - Compact */
+    .page-header {
+        padding: 12px 0 !important;
+        margin-bottom: 12px !important;
+    }
+
+    .page-header h1 {
+        font-size: 18px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .page-header p {
+        font-size: 12px !important;
+        margin: 0 !important;
+    }
+
+    /* Mobile Table Layout - Lead List Specific */
+    .table-responsive {
+        width: 100% !important;
+        overflow: hidden !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+    }
+
+    /* .table-container - DISABLED for natural page scroll
+    .table-container {
+        width: 100% !important;
+        overflow: hidden !important;
+    }
+    */
+
+    /* Lead Table - Keep visible but compressed */
+    #leadsTable,
+    .leads-table {
+        display: table !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+
+    /* Data tables in general - compress but show */
+    .data-table {
+        display: table !important;
+        width: 100% !important;
+        font-size: 7px !important;
+    }
+
+    /* Show mobile lead cards when they exist */
+    .lead-mobile-cards {
+        display: block !important;
+    }
+
+    /* If table must be shown, extreme compression */
+    .force-table .data-table {
+        display: table !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+        font-size: 8px !important;
+    }
+
+    .force-table .data-table th,
+    .force-table .data-table td {
+        padding: 3px 2px !important;
+        font-size: 7px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 50px !important;
+    }
+
+    /* Lead Table Specific Column Handling */
+    #leadsTable th,
+    #leadsTable td,
+    .leads-table th,
+    .leads-table td {
+        padding: 2px !important;
+        font-size: 6px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    /* Column widths for lead table - Stack vertically */
+    #leadsTable,
+    .leads-table {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    #leadsTable thead {
+        display: none !important; /* Hide headers on mobile */
+    }
+
+    #leadsTable tbody,
+    #leadsTable tr,
+    #leadsTable td {
+        display: block !important;
+        width: 100% !important;
+        padding: 8px 4px !important; /* More padding for each cell */
+        line-height: 1.5 !important; /* Better line spacing */
+    }
+
+    /* ── MOBILE LEAD CARD LAYOUT ──────────────────────────────────────────────
+       Column map (actual HTML order):
+         td:1  checkbox            → HIDDEN
+         td:2  name                → row 1 left
+         td:3  circle indicator    → HIDDEN
+         td:4  contact (phone/email)→ row 1 right
+         td:5  interest bar        → row 2 full-width
+         td:6  premium             → row 3 left
+         td:7  stage badge         → row 3 right
+         td:8  assign-stage/todo   → HIDDEN
+         td:9  renewal date        → row 4 left
+         td:10 agent               → HIDDEN
+         td:11 insurance company   → row 4 right
+         td:12 created date        → HIDDEN
+         td:13 action buttons      → row 5 right
+
+       Specificity note: all per-cell rules use
+       "#leadsTable tr:not(.lead-divider) td:nth-child(X)" to match or
+       beat the base td rule, preventing !important conflicts.
+    ──────────────────────────────────────────────────────────────────────── */
+
+    /* Card shell */
+    #leadsTable tr:not(.lead-divider),
+    .leads-table tr:not(.lead-divider) {
+        display: block !important;
+        position: relative !important;
+        margin-bottom: 8px !important;
+        background: #ffffff !important;
+        border-radius: 10px !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.10) !important;
+        border-left: 3px solid #3b82f6 !important;
+        height: 150px !important;
+        min-height: 150px !important;
+        max-height: 150px !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+    }
+
+    /* Base: all cells become absolutely positioned with no default spacing.
+       width:auto overrides the earlier width:100% rule. */
+    #leadsTable tr:not(.lead-divider) td {
+        position: absolute !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        line-height: 1.3 !important;
+        box-sizing: border-box !important;
+        width: auto !important;
+    }
+
+    /* ── HIDDEN columns (specificity matches base rule) ── */
+    #leadsTable tr:not(.lead-divider) td:nth-child(1),
+    #leadsTable tr:not(.lead-divider) td:nth-child(3),
+    #leadsTable tr:not(.lead-divider) td:nth-child(8),
+    #leadsTable tr:not(.lead-divider) td:nth-child(10),
+    #leadsTable tr:not(.lead-divider) td:nth-child(12) {
+        display: none !important;
+    }
+
+    /* ── ROW 1: Name (full width) ── */
+    #leadsTable tr:not(.lead-divider) td:nth-child(2) {
+        top: 10px !important;
+        left: 12px !important;
+        right: 12px !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: #111827 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    #leadsTable tr:not(.lead-divider) td:nth-child(2) strong {
+        font-size: 13px !important;
+        color: #3b82f6 !important;
+        font-weight: 700 !important;
+    }
+
+    /* ── ROW 5: Contact icons bottom-left (📞 ✉) ── */
+    #leadsTable tr:not(.lead-divider) td:nth-child(4) {
+        top: 118px !important;
+        left: 12px !important;
+        width: auto !important;
+    }
+    #leadsTable tr:not(.lead-divider) td:nth-child(4) .contact-info {
+        display: flex !important;
+        gap: 6px !important;
+        align-items: center !important;
+    }
+    #leadsTable tr:not(.lead-divider) td:nth-child(4) a {
+        width: 26px !important;
+        height: 26px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #eff6ff !important;
+        border: 1px solid #bfdbfe !important;
+        border-radius: 5px !important;
+        font-size: 12px !important;
+        color: #3b82f6 !important;
+        text-decoration: none !important;
+    }
+
+    /* ── ROW 2: Interest / time bar (full width) ── */
+    #leadsTable tr:not(.lead-divider) td:nth-child(5) {
+        top: 36px !important;
+        left: 12px !important;
+        right: 12px !important;
+        height: 20px !important;
+        width: auto !important;
+    }
+
+    /* ── ROW 3: Premium (left) ── */
+    #leadsTable tr:not(.lead-divider) td:nth-child(6) {
+        top: 64px !important;
+        left: 12px !important;
+        width: 56% !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: #059669 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+    }
+    #leadsTable tr:not(.lead-divider) td:nth-child(6)::before {
+        content: "Premium: " !important;
+        font-size: 11px !important;
+        font-weight: 400 !important;
+        color: #6b7280 !important;
+    }
+
+    /* ── ROW 3: Stage badge (right) ── */
+    #leadsTable tr:not(.lead-divider) td:nth-child(7) {
+        top: 62px !important;
+        right: 12px !important;
+        width: 40% !important;
+        text-align: right !important;
+    }
+    #leadsTable tr:not(.lead-divider) td:nth-child(7) .stage-badge,
+    #leadsTable tr:not(.lead-divider) td:nth-child(7) span.stage-badge {
+        display: inline-block !important;
+        padding: 3px 8px !important;
+        border-radius: 10px !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        white-space: nowrap !important;
+        border: 1px solid transparent !important;
+    }
+    #leadsTable tr:not(.lead-divider) td:nth-child(7) .stage-badge.stage-new       { background:#dbeafe !important; color:#1e40af !important; border-color:#93c5fd !important; }
+    #leadsTable tr:not(.lead-divider) td:nth-child(7) .stage-badge.stage-quoted    { background:#d1fae5 !important; color:#065f46 !important; border-color:#6ee7b7 !important; }
+    #leadsTable tr:not(.lead-divider) td:nth-child(7) .stage-badge.stage-qualified { background:#fef3c7 !important; color:#92400e !important; border-color:#fcd34d !important; }
+    #leadsTable tr:not(.lead-divider) td:nth-child(7) .stage-badge.stage-closed    { background:#dcfce7 !important; color:#14532d !important; border-color:#86efac !important; }
+
+    /* ── ROW 4: Renewal/Expires (left) ── */
+    #leadsTable tr:not(.lead-divider) td:nth-child(9) {
+        top: 90px !important;
+        left: 12px !important;
+        width: 52% !important;
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        color: #374151 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+    }
+    #leadsTable tr:not(.lead-divider) td:nth-child(9)::before {
+        content: "Exp: " !important;
+        font-size: 10px !important;
+        font-weight: 400 !important;
+        color: #9ca3af !important;
+    }
+
+    /* ── ROW 4: Insurance company (right) ── */
+    #leadsTable tr:not(.lead-divider) td:nth-child(11) {
+        top: 87px !important;
+        right: 12px !important;
+        width: 44% !important;
+        text-align: right !important;
+    }
+    #leadsTable tr:not(.lead-divider) td:nth-child(11) span {
+        display: inline-block !important;
+        padding: 3px 8px !important;
+        border-radius: 10px !important;
+        font-size: 10px !important;
+        font-weight: 500 !important;
+        white-space: nowrap !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    /* ── ROW 5: Action buttons bottom-right (👁 🗄 🗑) ── */
+    #leadsTable tr:not(.lead-divider) td:last-child {
+        top: 92px !important;
+        right: 12px !important;
+        width: auto !important;
+    }
+    #leadsTable tr:not(.lead-divider) .action-buttons {
+        display: flex !important;
+        gap: 4px !important;
+        justify-content: flex-end !important;
+    }
+    #leadsTable tr:not(.lead-divider) .action-buttons .btn-icon {
+        width: 26px !important;
+        height: 26px !important;
+        padding: 0 !important;
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 5px !important;
+        font-size: 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: #64748b !important;
+        cursor: pointer !important;
+    }
+    #leadsTable tr:not(.lead-divider) .action-buttons .btn-icon-danger {
+        background: #fff1f2 !important;
+        border-color: #fecdd3 !important;
+        color: #ef4444 !important;
+    }
+
+    /* Lead Divider Row - Mobile Fix - NORMAL HEIGHT */
+    #leadsTable tr.lead-divider[style],
+    .leads-table tr.lead-divider[style],
+    tbody tr.lead-divider[style] {
+        display: block !important; /* Override table display */
+        width: 100% !important;
+        background: #e5e7eb !important; /* Light grey background - override inline */
+        border: none !important;
+        margin: 8px 0 !important;
+        border-radius: 4px !important;
+        padding: 0 !important; /* No extra padding for divider */
+        min-height: auto !important; /* Override thick row styling */
+    }
+
+    #leadsTable tr.lead-divider[style] td[style],
+    .leads-table tr.lead-divider[style] td[style],
+    tbody tr.lead-divider[style] td[style] {
+        display: block !important; /* Override table cell display */
+        width: calc(100% + 16px) !important; /* Slightly wider than container */
+        max-width: none !important;
+        padding: 12px 8px !important; /* Normal padding for divider */
+        font-weight: bold !important;
+        color: #374151 !important; /* Dark text on light background - override inline */
+        font-size: 16px !important; /* Keep original size but ensure visibility */
+        text-align: center !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        background: #e5e7eb !important; /* Light grey background - override inline */
+        border-radius: 4px !important;
+        margin: 0 -12px !important; /* Larger negative margin to extend width */
+        box-sizing: border-box !important;
+        position: relative !important;
+        left: -4px !important; /* Slight left shift to center */
+    }
+
+    /* Action buttons in lead rows */
+    #leadsTable .actions,
+    #leadsTable .action-buttons,
+    .leads-table .actions {
+        display: flex !important;
+        gap: 4px !important;
+        width: 100% !important;
+    }
+
+    #leadsTable .actions button,
+    #leadsTable .actions a,
+    .leads-table .actions button,
+    .leads-table .actions a {
+        flex: 1 !important;
+        padding: 4px !important;
+        font-size: 8px !important;
+        text-align: center !important;
+        background: #f3f4f6 !important;
+        border: none !important;
+        border-radius: 3px !important;
+        color: var(--dark) !important;
+    }
+
+    #leadsTable .actions button i,
+    #leadsTable .actions a i {
+        font-size: 8px !important;
+        margin: 0 !important;
+    }
+
+    /* NOTE: lead card columns are managed individually above — no blanket hide */
+
+    /* Lead name / contact styles handled by card layout above */
+
+    /* Status badges tiny */
+    .status-badge {
+        padding: 1px 3px !important;
+        font-size: 6px !important;
+        border-radius: 2px !important;
+    }
+
+    /* Lead Mobile Card Layout */
+    .lead-card-mobile {
+        background: var(--white) !important;
+        border-radius: 4px !important;
+        padding: 6px !important;
+        margin-bottom: 4px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .lead-card-mobile .lead-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 4px !important;
+        padding-bottom: 4px !important;
+        border-bottom: 1px solid #f3f4f6 !important;
+    }
+
+    .lead-card-mobile .lead-name {
+        font-weight: 600 !important;
+        font-size: 11px !important;
+        color: var(--dark) !important;
+        max-width: 60% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .lead-card-mobile .lead-status {
+        padding: 2px 4px !important;
+        border-radius: 2px !important;
+        font-size: 8px !important;
+        font-weight: 500 !important;
+        text-transform: uppercase !important;
+    }
+
+    .lead-card-mobile .lead-details {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .lead-card-mobile .lead-detail-item {
+        display: flex !important;
+        align-items: center !important;
+        gap: 3px !important;
+        font-size: 9px !important;
+    }
+
+    .lead-card-mobile .lead-detail-item i {
+        font-size: 8px !important;
+        color: #6b7280 !important;
+        width: 10px !important;
+    }
+
+    .lead-card-mobile .lead-detail-value {
+        color: var(--dark) !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .lead-card-mobile .lead-actions-row {
+        display: flex !important;
+        gap: 3px !important;
+        margin-top: 4px !important;
+        padding-top: 4px !important;
+        border-top: 1px solid #f3f4f6 !important;
+    }
+
+    .lead-card-mobile .lead-action-btn {
+        flex: 1 !important;
+        padding: 4px !important;
+        background: #f3f4f6 !important;
+        border: none !important;
+        border-radius: 3px !important;
+        color: var(--dark) !important;
+        font-size: 8px !important;
+        text-align: center !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 2px !important;
+    }
+
+    .lead-card-mobile .lead-action-btn i {
+        font-size: 8px !important;
+    }
+
+    .lead-card-mobile .lead-action-btn:hover {
+        background: var(--primary) !important;
+        color: white !important;
+    }
+
+    /* Mobile Card Layout for Tables */
+    .mobile-card-view {
+        display: none;
+    }
+
+    .show-mobile-cards .data-table {
+        display: none;
+    }
+
+    .show-mobile-cards .mobile-card-view {
+        display: block;
+    }
+
+    .mobile-card {
+        background: var(--white);
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .mobile-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .mobile-card-title {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--dark);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 70%;
+    }
+
+    .mobile-card-status {
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .mobile-card-body {
+        display: grid;
+        gap: 4px;
+    }
+
+    .mobile-card-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 2px 0;
+        align-items: center;
+    }
+
+    .mobile-card-label {
+        color: var(--gray);
+        font-size: 11px;
+        max-width: 50%;
+    }
+
+    .mobile-card-value {
+        font-weight: 500;
+        font-size: 12px;
+        color: var(--dark);
+        text-align: right;
+        max-width: 50%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mobile-card-actions {
+        display: flex;
+        gap: 4px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .mobile-card-action {
+        flex: 1;
+        padding: 6px 4px;
+        text-align: center;
+        background: #f3f4f6;
+        border-radius: 4px;
+        color: var(--dark);
+        text-decoration: none;
+        font-size: 11px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+    }
+
+    .mobile-card-action i {
+        font-size: 10px;
+    }
+
+    .mobile-card-action:hover {
+        background: var(--primary);
+        color: var(--white);
+    }
+
+    /* Enhanced Forms Mobile */
+    .form-group {
+        margin-bottom: 20px !important;
+        position: relative;
+    }
+
+    .form-group label {
+        display: block !important;
+        margin-bottom: 8px !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        color: #374151 !important;
+    }
+
+    .form-control,
+    .form-select,
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="date"],
+    textarea,
+    select {
+        width: 100% !important;
+        padding: 12px 16px !important;
+        font-size: 16px !important; /* Prevent zoom on iOS */
+        border: 2px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        background-color: #ffffff !important;
+        transition: border-color 0.2s ease !important;
+        box-sizing: border-box !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+    }
+
+    /* Enhanced focus states for forms */
+    .form-control:focus,
+    .form-select:focus,
+    input:focus,
+    textarea:focus,
+    select:focus {
+        outline: none !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    }
+
+    /* Better textarea handling */
+    textarea {
+        min-height: 100px !important;
+        resize: vertical !important;
+    }
+
+    /* Custom select arrow for mobile */
+    select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-position: right 12px center !important;
+        background-repeat: no-repeat !important;
+        background-size: 16px !important;
+        padding-right: 40px !important;
+    }
+
+    /* Form validation styles */
+    .form-control.error,
+    input.error {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+    }
+
+    .form-control.success,
+    input.success {
+        border-color: #10b981 !important;
+        background-color: #f0fdf4 !important;
+    }
+
+    /* Error messages */
+    .form-error {
+        color: #ef4444 !important;
+        font-size: 14px !important;
+        margin-top: 4px !important;
+        display: block !important;
+    }
+
+    /* Form buttons mobile */
+    .form-buttons {
+        display: flex !important;
+        gap: 12px !important;
+        margin-top: 24px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .form-buttons .btn {
+        flex: 1 !important;
+        min-width: 100px !important;
+    }
+
+    /* Checkbox and radio improvements */
+    input[type="checkbox"],
+    input[type="radio"] {
+        width: auto !important;
+        height: 20px !important;
+        min-height: 20px !important;
+        margin-right: 8px !important;
+        transform: scale(1.2) !important;
+    }
+
+    .checkbox-group,
+    .radio-group {
+        display: flex !important;
+        align-items: center !important;
+        margin-bottom: 12px !important;
+        padding: 8px !important;
+        background: #f9fafb !important;
+        border-radius: 6px !important;
+    }
+
+    .checkbox-group label,
+    .radio-group label {
+        margin-bottom: 0 !important;
+        cursor: pointer !important;
+        user-select: none !important;
+    }
+
+    /* Sections - Compact */
+    .section {
+        padding: 12px 0 !important;
+        margin-bottom: 16px !important;
+    }
+
+    .section-header {
+        margin-bottom: 12px !important;
+        padding: 0 !important;
+    }
+
+    .section-header h2 {
+        font-size: 16px !important;
+        margin: 0 !important;
+    }
+
+    /* Buttons Mobile - Compact */
+    .btn {
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .btn-sm {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 6px;
+        flex-wrap: nowrap;
+    }
+
+    .btn-group .btn {
+        margin: 0;
+        flex: 1;
+    }
+
+    /* Enhanced Modal Mobile */
+    .modal {
+        padding: var(--mobile-spacing);
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+        transform: translateY(0);
+        transition: transform 0.3s ease;
+    }
+
+    .modal.closing .modal-content {
+        transform: translateY(100%);
+    }
+
+    .modal-header {
+        padding: 16px 16px 12px 16px;
+        position: sticky;
+        top: 0;
+        background: var(--white);
+        z-index: 10;
+        border-bottom: 1px solid #e5e7eb;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .modal-header h2,
+    .modal-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: #f3f4f6;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--dark);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .modal-close:hover {
+        background: #e5e7eb;
+    }
+
+    .modal-close:focus {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    .modal-body {
+        padding: 16px;
+        font-size: 16px;
+        line-height: 1.5;
+    }
+
+    .modal-footer {
+        padding: 12px 16px 16px 16px;
+        position: sticky;
+        bottom: 0;
+        background: var(--white);
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .modal-footer .btn {
+        min-width: 100px;
+        padding: 12px 16px;
+    }
+
+    /* Stats Cards Mobile - ACTUALLY TINY for Lead Management */
+    .stats-grid,
+    .lead-stats,
+    .stats-row {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important; /* 4 columns to fit all */
+        gap: 3px !important;
+        margin: 0 !important; /* Remove all margin including top margin */
+        margin-bottom: 6px !important;
+        padding: 0 !important;
+    }
+
+    /* Mobile Dashboard - Bring content much higher for VERY SMALL screens */
+    @media (max-width: 390px) {
+        .dashboard-content {
+            padding-top: 25px !important; /* Much higher placement for mobile */
+            margin-top: 0 !important;
+        }
+
+        .stats-grid {
+            margin-top: 0 !important; /* Remove top margin on small mobile only */
+            margin-bottom: 4px !important; /* Reduce bottom spacing */
+            padding: 2px !important; /* Extra compact padding */
+        }
+    }
+
+    .stat-card,
+    .stat-item,
+    .lead-stat {
+        padding: 4px 2px !important;
+        border-radius: 3px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+        background: var(--white) !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .stat-card .stat-icon,
+    .stat-item .icon {
+        display: none !important; /* Remove icons completely to save space */
+    }
+
+    .stat-card .stat-icon i,
+    .stat-item i {
+        display: none !important;
+    }
+
+    .stat-card .stat-content {
+        text-align: center !important;
+    }
+
+    .stat-card .stat-content h3,
+    .stat-item .label,
+    .stat-label {
+        font-size: 8px !important;
+        margin: 0 0 2px 0 !important;
+        font-weight: 400 !important;
+        color: #6b7280 !important;
+        line-height: 1 !important;
+        text-align: center !important;
+    }
+
+    .stat-card .stat-value,
+    .stat-item .value,
+    .stat-number {
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        line-height: 1 !important;
+        text-align: center !important;
+        color: var(--primary) !important;
+    }
+
+    .stat-card .stat-change,
+    .stat-item .change {
+        display: none !important; /* Hide change indicators to save space */
+    }
+
+    /* For stat cards that show as row */
+    .stats-horizontal {
+        display: flex !important;
+        gap: 2px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .stats-horizontal .stat-card {
+        flex: 1 !important;
+    }
+
+    /* Lead Management Section - Mobile Specific */
+    .lead-management,
+    .leads-section {
+        padding: 4px !important;
+    }
+
+    /* Lead Management Action Buttons - Just 2 Main Buttons */
+    .lead-actions,
+    .action-buttons,
+    .leads-actions,
+    .button-row,
+    .button-group {
+        display: flex !important;
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+        width: 100% !important;
+        padding: 0 !important;
+    }
+
+    /* Hide all buttons except Sync and New Lead on mobile */
+    .lead-actions button:not(:nth-child(1)):not(:nth-child(2)),
+    .action-buttons button:not(:nth-child(1)):not(:nth-child(2)),
+    .leads-actions button:not(:nth-child(1)):not(:nth-child(2)) {
+        display: none !important;
+    }
+
+    .lead-actions button,
+    .action-buttons button,
+    .leads-actions button,
+    .lead-actions .btn,
+    .action-buttons .btn,
+    .leads-actions .btn {
+        padding: 8px 12px !important;
+        font-size: 12px !important;
+        border-radius: 4px !important;
+        flex: 1 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        height: 32px !important;
+        line-height: 1 !important;
+        background: var(--primary) !important;
+        color: white !important;
+        border: none !important;
+        margin: 0 !important;
+        font-weight: 500 !important;
+    }
+
+    /* Override button text with shorter versions */
+    button[onclick*="sync"]:after,
+    button[onclick*="Sync"]:after,
+    button[onclick*="vicidial"]:after,
+    button[onclick*="Vicidial"]:after {
+        content: "Sync" !important;
+    }
+
+    button[onclick*="sync"] span,
+    button[onclick*="Sync"] span,
+    button[onclick*="vicidial"] span,
+    button[onclick*="Vicidial"] span {
+        display: none !important;
+    }
+
+    /* New Lead button */
+    button[onclick*="new"],
+    button[onclick*="New"],
+    button[onclick*="add"],
+    button[onclick*="Add"] {
+        background: #10b981 !important;
+    }
+
+    /* Icons in buttons - small but visible */
+    .lead-actions button i,
+    .action-buttons button i,
+    .leads-actions button i {
+        font-size: 10px !important;
+        margin-right: 4px !important;
+    }
+
+    /* Search Bar Mobile - Lead Management */
+    .search-container,
+    .search-bar,
+    .lead-search {
+        width: 100% !important;
+        margin-bottom: 8px !important;
+        display: flex !important;
+        gap: 4px !important;
+    }
+
+    .search-input,
+    input[type="search"],
+    .lead-search input {
+        width: 100% !important;
+        padding: 6px 8px !important;
+        font-size: 12px !important;
+        border-radius: 4px !important;
+        border: 1px solid #e5e7eb !important;
+    }
+
+    .search-button,
+    .search-btn {
+        padding: 6px 8px !important;
+        font-size: 11px !important;
+        min-width: auto !important;
+    }
+
+    /* Lead Filters - Mobile */
+    .lead-filters,
+    .filter-section,
+    .filters-row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        margin-bottom: 8px !important;
+        width: 100% !important;
+    }
+
+    .lead-filters select,
+    .filter-section select,
+    .filter-dropdown {
+        padding: 4px 6px !important;
+        font-size: 10px !important;
+        border-radius: 3px !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        max-width: calc(33.33% - 4px) !important;
+    }
+
+    /* Lead count and pagination - Mobile */
+    .lead-count,
+    .pagination-info {
+        font-size: 10px !important;
+        padding: 4px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .pagination,
+    .lead-pagination {
+        display: flex !important;
+        gap: 2px !important;
+        justify-content: center !important;
+        margin: 8px 0 !important;
+    }
+
+    .pagination button,
+    .pagination a,
+    .page-link {
+        padding: 4px 6px !important;
+        font-size: 10px !important;
+        min-width: 24px !important;
+        height: 24px !important;
+    }
+
+    /* Tabs Mobile */
+    .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+        margin: 0 -var(--mobile-spacing);
+        padding: 0 var(--mobile-spacing);
+    }
+
+    .tab {
+        display: inline-block;
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    /* Dropdowns Mobile */
+    .dropdown-menu {
+        position: fixed;
+        left: var(--mobile-spacing);
+        right: var(--mobile-spacing);
+        top: auto;
+        width: auto;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    /* Charts Mobile - Side by Side and Compact */
+    .charts-section {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .chart-card {
+        background: var(--white) !important;
+        border-radius: 6px !important;
+        padding: 8px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .chart-card h3 {
+        font-size: 11px !important;
+        margin: 0 0 6px 0 !important;
+        font-weight: 600 !important;
+    }
+
+    .chart-container {
+        height: 120px !important;
+    }
+
+    canvas:not(#realPdfCanvas) {
+        max-height: 120px !important;
+    }
+
+    /* Quick Actions Cards - Ultra Compact */
+    .action-card {
+        padding: 6px 2px !important;
+        border-radius: 6px !important;
+        min-height: 45px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: var(--white) !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+        cursor: pointer !important;
+    }
+
+    .action-card:hover {
+        transform: none !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .action-card i {
+        font-size: 14px !important;
+        margin-bottom: 2px !important;
+        color: var(--primary) !important;
+    }
+
+    .action-card h3 {
+        font-size: 8px !important;
+        margin: 0 !important;
+        text-align: center !important;
+        line-height: 1 !important;
+        font-weight: 500 !important;
+        color: var(--dark) !important;
+        word-break: break-all !important;
+        padding: 0 2px !important;
+    }
+
+    .action-card p {
+        display: none !important;
+    }
+
+    /* Quick Actions Section */
+    .quick-actions {
+        margin-bottom: 10px !important;
+        padding: 0 !important;
+    }
+
+    .quick-actions .section-header {
+        margin-bottom: 6px !important;
+    }
+
+    .quick-actions .section-header h2 {
+        font-size: 13px !important;
+    }
+
+    /* Recent Activity and Renewals Side-by-Side */
+    .dashboard-sections {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        gap: 4px !important;
+        margin-bottom: 10px !important;
+        width: calc(100% - 4px) !important;
+        margin-left: 2px !important;
+        margin-right: 2px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .recent-activity,
+    .upcoming-renewals {
+        background: var(--white) !important;
+        border-radius: 4px !important;
+        padding: 4px !important;
+        height: 140px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .recent-activity .section-header,
+    .upcoming-renewals .section-header {
+        padding: 0 0 3px 0 !important;
+        margin-bottom: 3px !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
+        height: 18px !important;
+    }
+
+    .recent-activity .section-header h2,
+    .upcoming-renewals .section-header h2 {
+        font-size: 10px !important;
+        margin: 0 !important;
+        font-weight: 600 !important;
+        line-height: 1 !important;
+    }
+
+    .recent-activity .view-all,
+    .upcoming-renewals .view-all {
+        font-size: 8px !important;
+        padding: 1px 3px !important;
+        background: #f3f4f6 !important;
+        border-radius: 2px !important;
+        text-decoration: none !important;
+        color: var(--primary) !important;
+    }
+
+    /* Activity List - Ultra Compact */
+    .activity-list {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        flex: 1 !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .activity-item {
+        padding: 3px 0 !important;
+        border-bottom: 1px solid #f9fafb !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 3px !important;
+        min-height: auto !important;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none !important;
+    }
+
+    .activity-item i {
+        font-size: 8px !important;
+        width: 14px !important;
+        height: 14px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #e6f2ff !important;
+        border-radius: 50% !important;
+        flex-shrink: 0 !important;
+        margin-top: 1px !important;
+    }
+
+    .activity-item .activity-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .activity-item .activity-text {
+        font-size: 9px !important;
+        line-height: 1.2 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        color: var(--dark) !important;
+    }
+
+    .activity-item .activity-time {
+        font-size: 7px !important;
+        color: #9ca3af !important;
+        margin-top: 1px !important;
+    }
+
+    /* Renewals Table - Ultra Compact with proper containment */
+    .renewals-table {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        flex: 1 !important;
+        -webkit-overflow-scrolling: touch !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .renewals-table table {
+        width: 100% !important;
+        font-size: 7px !important;
+        table-layout: fixed !important;
+        box-sizing: border-box !important;
+    }
+
+    .renewals-table thead {
+        display: none !important;
+    }
+
+    .renewals-table tbody {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .renewals-table tr {
+        display: block !important;
+        padding: 2px 0 !important;
+        border-bottom: 1px solid #f9fafb !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .renewals-table tr:last-child {
+        border-bottom: none !important;
+    }
+
+    .renewals-table td {
+        padding: 1px !important;
+        display: block !important;
+        font-size: 7px !important;
+        border: none !important;
+        box-sizing: border-box !important;
+    }
+
+    .renewals-table td:nth-child(1) {
+        font-weight: 600 !important;
+        font-size: 8px !important;
+        margin-bottom: 1px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        color: var(--dark) !important;
+        width: 100% !important;
+    }
+
+    .renewals-table td:nth-child(2),
+    .renewals-table td:nth-child(3) {
+        display: inline-block !important;
+        width: 48% !important;
+        box-sizing: border-box !important;
+    }
+
+    .renewals-table td:nth-child(2) {
+        color: #6b7280 !important;
+        font-size: 6px !important;
+        padding-right: 2px !important;
+    }
+
+    .renewals-table td:nth-child(3) {
+        text-align: right !important;
+        color: #dc2626 !important;
+        font-weight: 500 !important;
+        font-size: 6px !important;
+    }
+
+    .renewals-table td:nth-child(4),
+    .renewals-table td:nth-child(5) {
+        display: none !important;
+    }
+
+    /* Footer Mobile */
+    .footer {
+        padding: 20px var(--mobile-spacing);
+        text-align: center;
+    }
+
+    .footer-links {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+
+/* Small Mobile Styles (max-width: 390px for iPhone and similar small devices) */
+@media (max-width: 390px) {
+    /* Even more compact spacing */
+    :root {
+        --mobile-spacing: 6px;
+    }
+
+    /* Prevent any horizontal overflow */
+    html, body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+    }
+
+    * {
+        max-width: 100% !important;
+        word-wrap: break-word !important;
+    }
+
+    /* Ultra-compact header */
+    .header {
+        height: 45px !important;
+    }
+
+    .mobile-nav {
+        top: 45px !important;
+        height: calc(100vh - 45px) !important;
+    }
+
+    .nav-brand h1 {
+        font-size: 12px !important;
+    }
+
+    .mobile-menu-toggle {
+        font-size: 18px !important;
+        padding: 4px !important;
+    }
+
+    /* Adjust content for smaller header */
+    .dashboard-content,
+    .main-content {
+        padding-top: 51px !important; /* Original value restored */
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+
+    /* Smaller fonts */
+    body {
+        font-size: 13px;
+    }
+
+    h1 {
+        font-size: 16px !important;
+    }
+
+    h2 {
+        font-size: 14px !important;
+    }
+
+    h3 {
+        font-size: 13px !important;
+    }
+
+    /* Ultra-compact cards */
+    .mobile-card {
+        padding: 8px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .mobile-card-title {
+        font-size: 13px !important;
+    }
+
+    .mobile-card-label {
+        font-size: 10px !important;
+    }
+
+    .mobile-card-value {
+        font-size: 11px !important;
+    }
+
+    /* Keep 2-column stats grid but smaller */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 4px !important;
+    }
+
+    /* Ultra compact quick actions on small screens */
+    .actions-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 3px !important;
+    }
+
+    .action-card {
+        padding: 4px 1px !important;
+        min-height: 40px !important;
+    }
+
+    .action-card i {
+        font-size: 12px !important;
+    }
+
+    .action-card h3 {
+        font-size: 7px !important;
+        line-height: 0.9 !important;
+    }
+
+    /* Keep side-by-side layout but smaller and contained */
+    .dashboard-sections {
+        gap: 3px !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        width: calc(100vw - 12px) !important;
+        margin: 0 !important;
+    }
+
+    .recent-activity,
+    .upcoming-renewals {
+        height: 120px !important;
+        padding: 3px !important;
+        max-width: calc(50vw - 9px) !important;
+    }
+
+    /* Force dashboard sections to be contained */
+    .dashboard-sections > * {
+        max-width: calc(50vw - 9px) !important;
+    }
+
+    .recent-activity .section-header h2,
+    .upcoming-renewals .section-header h2 {
+        font-size: 9px !important;
+    }
+
+    .activity-item .activity-text {
+        font-size: 8px !important;
+    }
+
+    .renewals-table td:nth-child(1) {
+        font-size: 8px !important;
+    }
+
+    /* Charts even smaller */
+    .charts-section {
+        gap: 4px !important;
+    }
+
+    .chart-card {
+        padding: 6px !important;
+    }
+
+    .chart-card h3 {
+        font-size: 10px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .chart-container,
+    canvas:not(#realPdfCanvas) {
+        height: 100px !important;
+        max-height: 100px !important;
+    }
+
+    .stat-card {
+        padding: 8px !important;
+    }
+
+    .stat-card .stat-icon {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 12px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .stat-card .stat-content h3 {
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+    }
+
+    .stat-card .stat-value {
+        font-size: 14px !important;
+    }
+
+    .stat-card .stat-change {
+        font-size: 9px !important;
+    }
+
+    /* Ultra-compact buttons */
+    .btn {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+    }
+
+    .btn-sm {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+    }
+
+    /* Compact bottom nav */
+    .bottom-nav {
+        padding: 4px 0 !important;
+        height: 50px !important;
+    }
+
+    .bottom-nav-item {
+        padding: 4px !important;
+    }
+
+    .bottom-nav-item i {
+        font-size: 16px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .bottom-nav-item span {
+        font-size: 9px !important;
+    }
+
+    /* Adjust for bottom nav */
+    .dashboard-content,
+    .main-content {
+        padding-bottom: 56px !important;
+    }
+
+    /* Table adjustments */
+    .data-table {
+        font-size: 11px !important;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 6px 4px !important;
+    }
+
+    /* Smaller modals */
+    .modal-content {
+        border-radius: 12px 12px 0 0;
+        margin-top: 20px;
+    }
+
+    /* Actions Grid Mobile - Ultra Compact */
+    .actions-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 4px !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* Forms ultra-compact */
+    .form-group {
+        margin-bottom: 10px !important;
+    }
+
+    .form-control,
+    .form-select {
+        padding: 8px !important;
+        font-size: 14px !important;
+    }
+
+    /* Notification styles */
+    .notification {
+        left: var(--mobile-spacing);
+        right: var(--mobile-spacing);
+        bottom: var(--mobile-spacing);
+        width: auto;
+    }
+}
+
+/* Enhanced Touch and Gesture Support */
+@media (hover: none) and (pointer: coarse) {
+    /* Increase touch targets - enhanced for better accessibility */
+    .btn,
+    .mobile-nav-link,
+    .mobile-card-action,
+    button,
+    input[type="button"],
+    input[type="submit"],
+    .clickable,
+    .touch-target {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        padding: 8px 12px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    /* Enhanced touch targets for small elements */
+    .btn-sm,
+    .action-btn,
+    .icon-button {
+        min-height: 40px !important;
+        min-width: 40px !important;
+        padding: 6px 10px !important;
+    }
+
+    /* Ensure adequate spacing between touch targets */
+    .btn + .btn,
+    button + button,
+    .touch-target + .touch-target {
+        margin-left: 8px !important;
+    }
+
+    /* Enhanced touch feedback */
+    .btn:active,
+    .mobile-card-action:active,
+    button:active,
+    .touch-target:active {
+        opacity: 0.7 !important;
+        transform: scale(0.96) !important;
+        transition: all 0.1s ease !important;
+    }
+
+    /* Remove hover effects on touch devices */
+    .btn:hover,
+    button:hover,
+    .mobile-card-action:hover {
+        transform: none !important;
+    }
+
+    /* Improve touch scrolling */
+    * {
+        -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2) !important;
+        -webkit-touch-callout: none;
+    }
+
+    .scrollable,
+    .table-responsive,
+    .mobile-nav,
+    .modal-body {
+        -webkit-overflow-scrolling: touch !important;
+        scroll-behavior: smooth !important;
+        overscroll-behavior: contain !important;
+    }
+
+    /* Enhanced form controls for touch */
+    input,
+    select,
+    textarea {
+        min-height: 44px !important;
+        font-size: 16px !important; /* Prevent iOS zoom */
+        padding: 8px 12px !important;
+        border-radius: 6px !important;
+    }
+}
+
+/* Landscape Mobile Adjustments */
+@media (max-width: 896px) and (orientation: landscape) {
+    .header {
+        height: 50px;
+    }
+
+    .mobile-nav {
+        top: 50px;
+        height: calc(100vh - 50px);
+    }
+
+    .modal-content {
+        max-height: calc(100vh - 20px);
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Print Styles */
+@media print {
+    .mobile-menu-toggle,
+    .mobile-nav,
+    .sidebar,
+    .header,
+    .footer {
+        display: none !important;
+    }
+
+    .dashboard-content,
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .data-table {
+        font-size: 10px;
+    }
+}
+
+/* Ultra-Compact Mobile Optimizations (390px and smaller ONLY) */
+@media (max-width: 390px) {
+    /* Dashboard sections stacked VERTICALLY for mobile - Reminders first, then To-Do */
+    .dashboard-sections {
+        display: grid !important;
+        grid-template-columns: 1fr !important; /* Single column - stacked vertically */
+        gap: 8px !important;
+        margin: 4px 0 !important;
+        padding: 0 2px !important; /* Minimal side padding */
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Reorder sections: Reminders first, To-Do second */
+    .section-card:not(.todo-container) {
+        order: 1 !important; /* Reminders section goes first */
+    }
+
+    .todo-container {
+        order: 2 !important; /* To-Do section goes second */
+    }
+
+    /* To-Do section ultra compact - FULL WIDTH to properly fit page */
+    .todo-container {
+        padding: 4px !important;
+        min-height: 180px !important;
+        width: calc(100vw - 12px) !important; /* Full viewport width minus minimal margin */
+        max-width: 100% !important;
+        margin: 0 2px !important;
+        box-sizing: border-box !important;
+    }
+
+    .todo-container .section-header {
+        padding: 4px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .todo-container .section-header h2 {
+        font-size: 12px !important;
+        margin: 0 !important;
+    }
+
+    /* Todo buttons ultra small */
+    #todoViewButtons button {
+        padding: 2px 4px !important;
+        font-size: 8px !important;
+        margin: 0 1px !important;
+    }
+
+    /* Todo input ultra compact */
+    #todoInput {
+        padding: 6px !important;
+        font-size: 11px !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* Reminders section ultra compact - FULL WIDTH to properly fit page */
+    .section-card:not(.todo-container) {
+        padding: 4px !important;
+        min-height: 180px !important;
+        width: calc(100vw - 12px) !important; /* Full viewport width minus minimal margin */
+        max-width: 100% !important;
+        margin: 0 2px !important;
+        box-sizing: border-box !important;
+    }
+
+    .section-card:not(.todo-container) h2 {
+        font-size: 12px !important;
+        margin: 0 0 6px 0 !important;
+    }
+
+    /* Reminder cards optimized for full width mobile */
+    .reminder-stats {
+        padding: 4px !important;
+        width: 100% !important;
+    }
+
+    .reminder-stats > div {
+        grid-template-columns: 1fr 1fr !important; /* 2x2 grid for reminder cards */
+        gap: 4px !important;
+        width: 100% !important;
+    }
+
+    .reminder-stats div[style*="padding: 15px"] {
+        padding: 6px !important; /* Compact padding for reminder cards */
+        font-size: 10px !important;
+        border-radius: 4px !important;
+    }
+
+    /* Make reminder card text smaller for mobile */
+    .reminder-stats p {
+        font-size: 9px !important;
+        margin: 2px 0 !important;
+    }
+
+    .reminder-stats p:last-child {
+        font-size: 14px !important; /* Keep numbers readable */
+        font-weight: bold !important;
+    }
+
+    /* Stats grid ultra compact - 2x2 instead of 4 across */
+    .stats-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 3px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .stat-card {
+        padding: 6px 4px !important;
+        min-height: 60px !important;
+    }
+
+    .stat-card .stat-details h3 {
+        font-size: 9px !important;
+        line-height: 1.1 !important;
+        margin-bottom: 2px !important;
+    }
+
+    .stat-card .stat-number {
+        font-size: 16px !important;
+        font-weight: bold !important;
+    }
+
+    /* Ultra compact header for tiny screens */
+    .header {
+        height: 45px !important;
+        padding: 0 4px !important;
+    }
+
+    .nav-brand h1 {
+        font-size: 11px !important;
+    }
+
+    .nav-brand .logo {
+        width: 24px !important;
+        height: 24px !important;
+    }
+
+    /* Adjust content for smaller header - bring much higher */
+    .dashboard-content,
+    .main-content {
+        padding-top: 20px !important; /* Much higher for ultra-compact mobile */
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+        margin-top: 0 !important;
+    }
+
+    /* Remove any extra spacing from sections */
+    .dashboard-sections {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+}
+
+/* Accessibility Improvements for Mobile */
+@media (max-width: 390px) {
+    /* Focus styles for mobile */
+    *:focus {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+    }
+
+    /* Skip to content link */
+    .skip-to-content {
+        position: absolute;
+        left: -9999px;
+        z-index: 1000;
+    }
+
+    .skip-to-content:focus {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        padding: 8px 16px;
+        background: var(--primary);
+        color: var(--white);
+        text-decoration: none;
+        border-radius: 4px;
+    }
+}
+
+/* Loading States for Mobile */
+.mobile-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    color: var(--gray);
+}
+
+.mobile-loading-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f4f6;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Empty States for Mobile */
+.mobile-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--gray);
+}
+
+.mobile-empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.mobile-empty-state h3 {
+    font-size: 18px;
+    color: var(--dark);
+    margin-bottom: 8px;
+}
+
+.mobile-empty-state p {
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* Pull to Refresh (iOS-style) */
+.pull-to-refresh {
+    position: absolute;
+    top: -60px;
+    left: 0;
+    right: 0;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease;
+}
+
+.pull-to-refresh.active {
+    transform: translateY(60px);
+}
+
+/* Bottom Navigation Bar (Mobile) */
+.bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 990;
+}
+
+@media (max-width: 768px) {
+    .bottom-nav {
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 0;
+    }
+
+    .bottom-nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px;
+        color: var(--gray);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .bottom-nav-item.active,
+    .bottom-nav-item:hover {
+        color: var(--primary);
+    }
+
+    .bottom-nav-item i {
+        font-size: 20px;
+        margin-bottom: 4px;
+    }
+
+    .bottom-nav-item span {
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    /* Adjust content for bottom nav */
+    .dashboard-content,
+    .main-content {
+        padding-bottom: calc(60px + var(--mobile-spacing));
+    }
+}
+
+/* Swipe Actions for Mobile Cards */
+.swipeable-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.swipe-actions {
+    position: absolute;
+    top: 0;
+    right: -200px;
+    bottom: 0;
+    width: 200px;
+    display: flex;
+    transition: right 0.3s ease;
+}
+
+.swipeable-card.swiped .swipe-actions {
+    right: 0;
+}
+
+.swipe-action {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.swipe-action.edit {
+    background: #3b82f6;
+}
+
+.swipe-action.delete {
+    background: #ef4444;
+}
+
+/* Floating Action Button (FAB) */
+.fab {
+    display: none !important;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+@media (min-width: 769px) {
+    .fab {
+        display: none;
+    }
+}
+
+/* Additional Mobile UX Enhancements - Specific to mobile only */
+@media (max-width: 390px) {
+    /* Improved focus management */
+    .focus-trap {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* Better loading states */
+    .mobile-skeleton {
+        background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* Enhanced notification positioning */
+    .toast-container {
+        position: fixed;
+        top: 60px;
+        left: 12px;
+        right: 12px;
+        z-index: 1001;
+        pointer-events: none;
+    }
+
+    .toast {
+        background: var(--white);
+        border-left: 4px solid var(--primary);
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        margin-bottom: 8px;
+        pointer-events: auto;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .toast.show {
+        transform: translateX(0);
+    }
+
+    /* Safe area support for devices with notches */
+    @supports (padding-top: env(safe-area-inset-top)) {
+        .header {
+            padding-top: env(safe-area-inset-top);
+            height: calc(50px + env(safe-area-inset-top));
+        }
+
+        .mobile-nav {
+            top: calc(50px + env(safe-area-inset-top));
+            height: calc(100vh - 50px - env(safe-area-inset-top));
+        }
+
+        .dashboard-content,
+        .main-content {
+            padding-top: calc(56px + env(safe-area-inset-top));
+        }
+
+        .bottom-nav {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    }
+
+    /* Reduce motion for accessibility */
+    @media (prefers-reduced-motion: reduce) {
+        .mobile-nav,
+        .modal-content,
+        .btn,
+        .mobile-card-action {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+        .mobile-nav-link,
+        .btn,
+        .form-control {
+            border: 2px solid currentColor !important;
+        }
+
+        .mobile-nav-link:focus,
+        .btn:focus,
+        .form-control:focus {
+            outline: 3px solid currentColor !important;
+            outline-offset: 2px !important;
+        }
+    }
+
+    /* Policy Profile Certificate of Insurance - Mobile Fix - HIGH SPECIFICITY */
+    div.form-section[style] {
+        padding: 16px !important;
+        margin: 0 !important;
+        border-radius: 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    /* COI Section Header - Override inline styles with high specificity */
+    div.form-section[style] > div[style]:first-child {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        margin-bottom: 20px !important;
+        justify-content: flex-start !important;
+    }
+
+    div.form-section[style] h3[style] {
+        font-size: 18px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        order: 1 !important;
+    }
+
+    /* COI Action buttons - Override inline flex styles */
+    div.form-section[style] > div[style]:first-child > div[style] {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        width: 100% !important;
+        justify-content: flex-start !important;
+        order: 2 !important;
+    }
+
+    div.form-section[style] button.btn-secondary[style] {
+        flex: 1 !important;
+        min-width: calc(33.33% - 4px) !important;
+        max-width: calc(33.33% - 4px) !important;
+        padding: 8px 4px !important;
+        font-size: 11px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        box-sizing: border-box !important;
+    }
+
+    div.form-section[style] button.btn-secondary[style] i {
+        font-size: 10px !important;
+        margin-right: 4px !important;
+    }
+
+    /* COI Document Cards - Override all inline styles */
+    div.coi-document-card[style] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        padding: 12px !important;
+        margin-bottom: 8px !important;
+        gap: 12px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    /* COI Document content - override inline flex */
+    div.coi-document-card[style] > div[style]:first-child {
+        display: flex !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+        margin-bottom: 8px !important;
+        flex-wrap: wrap !important;
+    }
+
+    div.coi-document-card[style] i.fas.fa-file-pdf[style] {
+        font-size: 20px !important;
+        margin-right: 10px !important;
+        flex-shrink: 0 !important;
+    }
+
+    div.coi-document-card[style] > div[style]:first-child > div {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    div.coi-document-card[style] .clickable-wrapper {
+        font-size: 12px !important;
+        line-height: 1.3 !important;
+        word-break: break-all !important;
+        overflow-wrap: break-word !important;
+        display: block !important;
+    }
+
+    div.coi-document-card[style] span.clickable-phone[style] {
+        word-break: break-all !important;
+        overflow-wrap: break-word !important;
+    }
+
+    /* COI Document buttons - side by side */
+    div.coi-document-card[style] > div[style]:last-child {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        width: 100% !important;
+        margin-top: 8px !important;
+    }
+
+    div.coi-document-card[style] button[style] {
+        flex: 1 !important;
+        min-width: 0 !important;
+        padding: 8px 10px !important;
+        font-size: 11px !important;
+        border-radius: 6px !important;
+        min-height: 36px !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+    }
+
+    div.coi-document-card[style] button[style] i {
+        font-size: 10px !important;
+        margin-right: 4px !important;
+    }
+
+    /* COI Files Container - override any inline styles */
+    div[id^="coiFilesContainer-"][style],
+    #coiFilesContainer-POL-1770758979516-tot2ysg78[style] {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        min-height: auto !important;
+    }
+
+    /* Additional mobile overflow prevention for any deeply nested content */
+    div.form-section[style] * {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    div.form-section[style] div[style] {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        word-wrap: break-word !important;
+    }
+
+    /* Policy View Modal - Full Mobile Optimization */
+    .modal-overlay.active#policyViewModal {
+        padding: 0 !important;
+        background: rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .modal-overlay#policyViewModal .modal-container.large[style] {
+        max-width: 100vw !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    /* Policy Modal Header - Mobile optimization */
+    .modal-overlay#policyViewModal .modal-header[style] {
+        padding: 16px 12px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        position: relative !important;
+    }
+
+    .modal-overlay#policyViewModal .modal-header[style] > div:first-child {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        width: 100% !important;
+        padding-right: 50px !important;
+    }
+
+    .modal-overlay#policyViewModal .policy-type-badge[style] {
+        padding: 4px 12px !important;
+        font-size: 12px !important;
+        border-radius: 12px !important;
+    }
+
+    .modal-overlay#policyViewModal .modal-header h2[style] {
+        font-size: 18px !important;
+        margin: 0 !important;
+        line-height: 1.3 !important;
+        word-break: break-word !important;
+    }
+
+    .modal-overlay#policyViewModal .close-btn[style] {
+        position: absolute !important;
+        top: 12px !important;
+        right: 12px !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 18px !important;
+        padding: 0 !important;
+    }
+
+    /* Policy Modal Body - Mobile scrolling */
+    .modal-overlay#policyViewModal .modal-body[style] {
+        padding: 16px 12px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+    }
+
+    /* Policy Status Bar - Mobile stack */
+    .modal-overlay#policyViewModal .modal-body > div:first-child[style] {
+        padding: 16px !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        align-items: flex-start !important;
+        margin-bottom: 20px !important;
+    }
+
+    .modal-overlay#policyViewModal .modal-body > div:first-child > div:last-child[style] {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 8px !important;
+        width: 100% !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .modal-overlay#policyViewModal .btn-secondary[style] {
+        flex: 1 !important;
+        min-width: 0 !important;
+        padding: 10px 8px !important;
+        font-size: 12px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    /* Policy Tabs - Horizontal scroll on mobile */
+    .modal-overlay#policyViewModal .policy-tabs[style] {
+        margin-bottom: 20px !important;
+        padding: 4px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        white-space: nowrap !important;
+        display: flex !important;
+        gap: 4px !important;
+        background: #f3f4f6 !important;
+        border-radius: 8px !important;
+    }
+
+    .modal-overlay#policyViewModal .tab-btn[style] {
+        flex-shrink: 0 !important;
+        padding: 10px 16px !important;
+        font-size: 12px !important;
+        border-radius: 6px !important;
+        margin: 0 !important;
+        white-space: nowrap !important;
+        min-width: auto !important;
+    }
+
+    .modal-overlay#policyViewModal .tab-btn[style] i {
+        display: none !important;
+    }
+
+    /* Policy Tab Contents - Mobile optimization */
+    .modal-overlay#policyViewModal .tab-contents[style] {
+        padding: 16px !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        margin-bottom: 60px !important;
+    }
+
+    .modal-overlay#policyViewModal .tab-content[style] {
+        padding: 0 !important;
+    }
+
+    /* Documents Tab - Two column to single column on mobile */
+    .modal-overlay#policyViewModal #documents-view-content > div:first-child[style] {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        margin-bottom: 20px !important;
+    }
+
+    /* View Grid - Single column on mobile */
+    .modal-overlay#policyViewModal .view-grid[style] {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+
+    .modal-overlay#policyViewModal .view-item label[style] {
+        font-size: 12px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .modal-overlay#policyViewModal .view-item p[style] {
+        font-size: 15px !important;
+        margin: 0 !important;
+        word-break: break-word !important;
+    }
+
+    /* ID Card Documents - Mobile optimization */
+    .modal-overlay#policyViewModal .id-card-document[style] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 12px !important;
+        gap: 12px !important;
+    }
+
+    .modal-overlay#policyViewModal .id-card-document[style] > div:first-child[style] {
+        display: flex !important;
+        align-items: flex-start !important;
+        width: 100% !important;
+        margin-bottom: 8px !important;
+    }
+
+    .modal-overlay#policyViewModal .id-card-document[style] > div:last-child[style] {
+        display: flex !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+
+    .modal-overlay#policyViewModal .id-card-document[style] button[style] {
+        flex: 1 !important;
+        padding: 8px 6px !important;
+        font-size: 10px !important;
+        min-height: 36px !important;
+        white-space: nowrap !important;
+    }
+
+    /* Modal Footer - Mobile optimization */
+    .modal-overlay#policyViewModal .modal-footer[style] {
+        padding: 16px 12px !important;
+        position: sticky !important;
+        bottom: 0 !important;
+        background: #f9fafb !important;
+        border-top: 1px solid #e5e7eb !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        align-items: stretch !important;
+    }
+
+    .modal-overlay#policyViewModal .modal-footer > div:first-child[style] {
+        display: flex !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    .modal-overlay#policyViewModal .modal-footer button[style] {
+        flex: 1 !important;
+        padding: 12px 16px !important;
+        font-size: 13px !important;
+        text-align: center !important;
+        min-height: 44px !important;
+    }
+
+    /* Additional Mobile Fixes */
+    .modal-overlay#policyViewModal * {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .modal-overlay#policyViewModal div[style*="display: grid; grid-template-columns: 1fr 1fr"] {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    /* Prevent horizontal scroll in modal */
+    .modal-overlay#policyViewModal .modal-container.large {
+        overflow-x: hidden !important;
+    }
+
+    .modal-overlay#policyViewModal .modal-body {
+        overflow-x: hidden !important;
+    }
+
+    /* Clients Table Mobile Optimization - Simple responsive approach */
+    .clients-view .data-table-container {
+        width: 100% !important;
+        overflow-x: auto !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .clients-view .data-table {
+        min-width: 800px !important;
+        font-size: 12px !important;
+    }
+
+    .clients-view .data-table th {
+        font-size: 11px !important;
+        padding: 8px 4px !important;
+        white-space: nowrap !important;
+    }
+
+    .clients-view .data-table td {
+        font-size: 12px !important;
+        padding: 8px 4px !important;
+        word-break: break-word !important;
+    }
+
+    .clients-view .client-avatar {
+        width: 20px !important;
+        height: 20px !important;
+        font-size: 8px !important;
+        margin-right: 6px !important;
+    }
+
+    .clients-view .action-buttons {
+        display: flex !important;
+        gap: 4px !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .clients-view .action-buttons .btn-icon {
+        padding: 4px !important;
+        font-size: 10px !important;
+        min-height: 28px !important;
+        min-width: 28px !important;
+    }
+
+    /* Hide FAB button on mobile */
+    .fab {
+        display: none !important;
+    }
+
+    /* Content Header Mobile - Stack vertically */
+    .clients-view .content-header {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .clients-view .content-header h1 {
+        font-size: 24px !important;
+        margin: 0 !important;
+    }
+
+    .clients-view .header-actions {
+        display: flex !important;
+        gap: 6px !important;
+        width: 100% !important;
+        flex-direction: row !important;
+    }
+
+    .clients-view .header-actions button {
+        flex: 1 !important;
+        padding: 8px 12px !important;
+        font-size: 12px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .clients-view .header-actions button i {
+        font-size: 11px !important;
+        margin-right: 4px !important;
+    }
+
+    /* Filters Bar - Stack on mobile */
+    .clients-view .filters-bar {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .clients-view .search-box {
+        width: 100% !important;
+    }
+
+    .clients-view .search-box input {
+        width: 100% !important;
+        padding: 12px 40px 12px 12px !important;
+        font-size: 16px !important;
+        border-radius: 8px !important;
+        border: 2px solid #e5e7eb !important;
+    }
+
+    .clients-view .filter-group {
+        display: flex !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .clients-view .filter-select {
+        flex: 1 !important;
+        min-width: calc(50% - 4px) !important;
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+        border-radius: 6px !important;
+    }
+
+    .clients-view .btn-filter {
+        flex: 1 !important;
+        min-width: 100% !important;
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+        margin-top: 8px !important;
+    }
+}
+
+/* Clickable Elements Styling for Clients Table */
+.clickable-wrapper {
+    display: inline-block;
+}
+
+.clickable-phone,
+.clickable-email {
+    cursor: pointer;
+    text-decoration: underline dotted rgb(0, 102, 204);
+    color: rgb(0, 102, 204);
+    transition: all 0.2s ease;
+}
+
+.clickable-phone:hover,
+.clickable-email:hover {
+    text-decoration: underline solid rgb(0, 102, 204);
+    background-color: rgba(0, 102, 204, 0.1);
+    border-radius: 3px;
+    padding: 2px 4px;
+}
+
+/* Mobile Card Layout for Clients Table */
+@media (max-width: 768px) {
+    .clients-view {
+        padding: 0 12px !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .clients-view .data-table {
+        border: none !important;
+        background: transparent !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: auto !important;
+    }
+
+    .clients-view .data-table thead {
+        display: none !important;
+    }
+
+    .clients-view .data-table tbody {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .clients-view .data-table tbody tr {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        background: white !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 12px !important;
+        margin: 0 0 16px 0 !important;
+        padding: 16px !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        box-sizing: border-box !important;
+    }
+
+    .clients-view .data-table tbody td {
+        display: block !important;
+        border: none !important;
+        padding: 0 !important;
+        text-align: left !important;
+        margin: 0 !important;
+    }
+
+    /* Header Row - Client Name */
+    .clients-view .data-table tbody tr td:nth-child(1) {
+        display: block !important;
+        margin-bottom: 12px !important;
+        padding-bottom: 12px !important;
+        border-bottom: 1px solid #f3f4f6 !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(1) .client-info {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(1) .client-avatar {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 14px !important;
+        flex-shrink: 0 !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: white !important;
+        font-weight: 600 !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(1) .client-name,
+    .clients-view .data-table tbody tr td:nth-child(1) span {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        color: #1f2937 !important;
+        flex: 1 !important;
+    }
+
+    /* Contact Row - Phone and Email */
+    .clients-view .data-table tbody tr td:nth-child(2),
+    .clients-view .data-table tbody tr td:nth-child(3) {
+        display: inline-block !important;
+        width: 48% !important;
+        vertical-align: top !important;
+        margin-bottom: 8px !important;
+        font-size: 14px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(2) {
+        margin-right: 4% !important;
+    }
+
+    /* Email and phone text truncation */
+    .clients-view .data-table tbody tr td:nth-child(2) .clickable-wrapper,
+    .clients-view .data-table tbody tr td:nth-child(3) .clickable-wrapper {
+        display: block !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: 100% !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(2) .clickable-phone,
+    .clients-view .data-table tbody tr td:nth-child(3) .clickable-email {
+        display: block !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: 100% !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(2):before {
+        content: "📞 ";
+        font-size: 14px;
+        margin-right: 4px;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(3):before {
+        content: "✉️ ";
+        font-size: 14px;
+        margin-right: 4px;
+    }
+
+    /* Info Row - Policies, Premium, Agent - Force visibility */
+    .clients-view .data-table tbody tr td:nth-child(4),
+    .clients-view .data-table tbody tr td:nth-child(5),
+    .clients-view .data-table tbody tr td:nth-child(6) {
+        display: inline-block !important;
+        width: 32% !important;
+        vertical-align: top !important;
+        margin-bottom: 12px !important;
+        font-size: 14px !important;
+        color: #6b7280 !important;
+        word-wrap: break-word !important;
+        box-sizing: border-box !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(4) {
+        margin-right: 2% !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(5) {
+        margin-right: 2% !important;
+    }
+
+    /* Force show info row - override any hidden styles */
+    .clients-view .data-table tbody tr td:nth-child(4):not(:empty),
+    .clients-view .data-table tbody tr td:nth-child(5):not(:empty),
+    .clients-view .data-table tbody tr td:nth-child(6):not(:empty) {
+        display: inline-block !important;
+        visibility: visible !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(4):before {
+        content: "Policies: ";
+        font-weight: 500;
+        color: #374151;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(5):before {
+        content: "💰 ";
+        font-size: 12px;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(6):before {
+        content: "Agent: ";
+        font-weight: 500;
+        color: #374151;
+    }
+
+    /* Action Buttons Row */
+    .clients-view .data-table tbody tr td:nth-child(7) {
+        margin-top: 12px !important;
+        padding-top: 12px !important;
+        border-top: 1px solid #f3f4f6 !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(7) .action-buttons {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr 1fr !important;
+        gap: 4px !important;
+        width: 100% !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(7) .btn-icon {
+        padding: 10px 12px !important;
+        font-size: 11px !important;
+        text-align: center !important;
+        border-radius: 8px !important;
+        border: 1px solid #e5e7eb !important;
+        background: #f9fafb !important;
+        color: #374151 !important;
+        transition: all 0.2s ease !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 2px !important;
+        min-height: 50px !important;
+        min-width: 60px !important;
+        box-sizing: border-box !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(7) .btn-icon:hover {
+        background: #f3f4f6 !important;
+        transform: translateY(-1px) !important;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(7) .btn-icon i {
+        font-size: 16px !important;
+        margin-bottom: 2px !important;
+    }
+
+    /* Button Labels */
+    .clients-view .data-table tbody tr td:nth-child(7) .btn-icon[title="View Client"]:after {
+        content: "View";
+        font-size: 10px;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(7) .btn-icon[title="Edit Client"]:after {
+        content: "Edit";
+        font-size: 10px;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(7) .btn-icon[title="Email Client"]:after {
+        content: "Email";
+        font-size: 10px;
+    }
+
+    .clients-view .data-table tbody tr td:nth-child(7) .btn-icon[title="Delete Client"]:after {
+        content: "Delete";
+        font-size: 10px;
+    }
+}
+
+/* Client Profile Mobile Layout */
+@media (max-width: 768px) {
+    .client-profile-view {
+        padding: 0 !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .client-profile-view .content-header {
+        margin: 0 12px 16px 12px !important;
+        padding: 16px !important;
+        border-radius: 8px !important;
+    }
+
+    .client-profile-view .content-header h1 {
+        font-size: 20px !important;
+        margin: 8px 0 0 0 !important;
+        line-height: 1.2 !important;
+    }
+
+    .client-profile-view .header-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 6px !important;
+        margin-top: 12px !important;
+    }
+
+    .client-profile-view .header-actions button {
+        flex: 1 !important;
+        padding: 8px 10px !important;
+        font-size: 12px !important;
+        white-space: nowrap !important;
+    }
+
+    /* "Go to Client Portal" → show as "Portal" only */
+    .client-profile-view span[style*="cursor: not-allowed"],
+    .client-profile-view a[href*="portal"] {
+        font-size: 0 !important;
+        padding: 6px 10px !important;
+    }
+    .client-profile-view span[style*="cursor: not-allowed"]::after,
+    .client-profile-view a[href*="portal"]::after {
+        content: "Portal" !important;
+        font-size: 12px !important;
+    }
+    .client-profile-view span[style*="cursor: not-allowed"] i,
+    .client-profile-view a[href*="portal"] i {
+        font-size: 11px !important;
+    }
+
+    /* Policy view/delete buttons — row, View Details large, delete trash small */
+    .client-profile-view div[style*="display: flex"][style*="gap: 8px"] {
+        flex-direction: row !important;
+        gap: 6px !important;
+    }
+    .client-profile-view div[style*="display: flex"][style*="gap: 8px"] button[onclick*="viewPolicy"] {
+        flex: 1 !important;
+        font-size: 13px !important;
+        padding: 8px 10px !important;
+    }
+    .client-profile-view div[style*="display: flex"][style*="gap: 8px"] button[onclick*="viewPolicy"]::after {
+        content: none !important;
+    }
+    .client-profile-view div[style*="display: flex"][style*="gap: 8px"] button[onclick*="deletePolicy"] {
+        flex: none !important;
+        width: 36px !important;
+        min-width: 36px !important;
+        padding: 8px 0 !important;
+        font-size: 13px !important;
+    }
+
+    /* Client Portal Box - Full Width on Mobile */
+    .client-profile-view > div:first-child {
+        padding: 0 12px !important;
+    }
+
+    .client-profile-view > div:first-child > div:first-child {
+        margin: 0 0 16px 0 !important;
+        padding: 16px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+    /* Portal email/password rows — stack vertically on mobile to prevent overflow */
+    .client-profile-view div[style*="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0"] {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        box-sizing: border-box !important;
+    }
+    /* Left side of portal row — allow it to shrink */
+    .client-profile-view div[style*="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0"] > div:first-child {
+        min-width: 0 !important;
+        flex: 1 !important;
+        overflow: hidden !important;
+    }
+    /* Email text inside portal row */
+    .client-profile-view div[style*="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0"] p {
+        word-break: break-all !important;
+        white-space: normal !important;
+    }
+
+    /* Two Column Grid -> Single Column */
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] {
+        display: block !important;
+        gap: 0 !important;
+    }
+
+    /* Client Information Section */
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:first-child {
+        margin: 0 12px 16px 12px !important;
+        padding: 16px !important;
+        border-radius: 8px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        max-width: calc(100vw - 24px) !important;
+    }
+    /* Info rows - prevent content overflow */
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:first-child div[style*="padding: 16px"] {
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        word-break: break-word !important;
+    }
+    /* Phone/email anchor links - allow wrap */
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:first-child a {
+        min-width: 0 !important;
+        overflow: hidden !important;
+        word-break: break-all !important;
+    }
+
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:first-child h2 {
+        font-size: 18px !important;
+    }
+
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:first-child div[style*="width: 64px"] {
+        width: 48px !important;
+        height: 48px !important;
+        font-size: 18px !important;
+    }
+
+    /* Policies Section */
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:nth-child(2) {
+        margin: 0 12px 16px 12px !important;
+        padding: 16px !important;
+        border-radius: 8px !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:nth-child(2) h2 {
+        font-size: 18px !important;
+    }
+
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:nth-child(2) div[style*="width: 48px"] {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    /* Policy Cards */
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:nth-child(2) div[style*="border: 1px solid #e5e7eb"] {
+        padding: 16px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:nth-child(2) div[style*="display: flex; justify-content: space-between"] {
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    .client-profile-view div[style*="grid-template-columns: 1fr 1fr"] > div:nth-child(2) div[style*="display: flex; align-items: center; gap: 10px"] {
+        flex-wrap: wrap !important;
+        justify-content: flex-start !important;
+    }
+
+    /* Documents Section */
+    .client-profile-view div[style*="padding: 24px; margin-top: 4px"] {
+        padding: 0 12px 16px 12px !important;
+        margin-top: 0 !important;
+    }
+
+    .client-profile-view div[style*="padding: 24px; margin-top: 4px"] > div {
+        padding: 16px !important;
+        border-radius: 8px !important;
+    }
+
+    .client-profile-view div[style*="padding: 24px; margin-top: 4px"] h3 {
+        font-size: 18px !important;
+    }
+
+    .client-profile-view div[style*="padding: 24px; margin-top: 4px"] div[style*="width: 48px"] {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    /* Mobile Text Sizing */
+    .client-profile-view p[style*="font-size: 32px"] {
+        font-size: 24px !important;
+    }
+
+    .client-profile-view p[style*="font-size: 22px"] {
+        font-size: 18px !important;
+    }
+
+    .client-profile-view p[style*="font-size: 20px"] {
+        font-size: 16px !important;
+    }
+
+    .client-profile-view p[style*="font-size: 18px"] {
+        font-size: 16px !important;
+    }
+
+    .client-profile-view p[style*="font-size: 16px"] {
+        font-size: 14px !important;
+    }
+
+    /* Policy Toggle and Actions — keep row layout, view/delete handled above */
+    .client-profile-view div[style*="display: flex; gap: 8px; margin-top: 12px"] {
+        flex-direction: row !important;
+        gap: 6px !important;
+    }
+
+    /* COI Modal Full Screen on Mobile */
+    .coi-modal {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: none !important;
+        max-height: none !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        overflow-y: auto !important;
+        z-index: 9999 !important;
+    }
+
+    .coi-modal .modal-header {
+        border-radius: 0 !important;
+        padding: 16px !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10000 !important;
+    }
+
+    .coi-modal .modal-header h3 {
+        font-size: 18px !important;
+        line-height: 1.2 !important;
+    }
+
+    .coi-modal .modal-body {
+        padding: 16px !important;
+        min-height: calc(100vh - 80px) !important;
+        box-sizing: border-box !important;
+    }
+
+    /* COI Form Elements Mobile Optimization */
+    .coi-modal .form-group {
+        margin-bottom: 20px !important;
+    }
+
+    .coi-modal .form-group label {
+        font-size: 14px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .coi-modal .form-group input,
+    .coi-modal .form-group textarea {
+        padding: 12px !important;
+        font-size: 16px !important;
+        border-radius: 6px !important;
+    }
+
+    .coi-modal .radio-group {
+        flex-direction: row !important;
+        gap: 16px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .coi-modal .radio-option {
+        margin-bottom: 0 !important;
+    }
+
+    /* COI form full width */
+    .coi-modal #crmCOIModalForm,
+    .coi-modal .form-group {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Email Recipients header — wrap on mobile */
+    .coi-modal .form-group > div[style*="justify-content: space-between"] {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    .coi-modal .form-group > div[style*="justify-content: space-between"] > div {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    /* COI Email Recipients Mobile */
+    .coi-modal .crm-coi-email-recipient-row {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        margin-bottom: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .coi-modal .crm-coi-email-recipient-row input {
+        flex: 1 !important;
+        min-width: 0 !important;
+        width: auto !important;
+    }
+
+    .coi-modal .crm-coi-email-recipient-row button {
+        flex: none !important;
+        white-space: nowrap !important;
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+    }
+
+    /* COI Form Actions Mobile */
+    .coi-modal .form-actions {
+        flex-direction: column-reverse !important;
+        gap: 8px !important;
+        position: sticky !important;
+        bottom: 0 !important;
+        background: white !important;
+        padding: 16px !important;
+        border-top: 1px solid #e5e7eb !important;
+        margin: 0 -16px -16px -16px !important;
+    }
+
+    .coi-modal .form-actions button {
+        width: 100% !important;
+        padding: 14px !important;
+        font-size: 16px !important;
+        border-radius: 8px !important;
+    }
+
+    .coi-modal .btn-submit {
+        order: 1 !important;
+    }
+
+    .coi-modal .btn-cancel {
+        order: 2 !important;
+    }
+
+    /* COI Policy Info Banner Mobile */
+    .coi-modal .policy-info-banner {
+        padding: 12px !important;
+        font-size: 14px !important;
+        line-height: 1.4 !important;
+        word-wrap: break-word !important;
+    }
+
+    /* COI Checkboxes Mobile */
+    .coi-modal div[style*="display: flex; gap: 8px; align-items: center"] {
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+    }
+
+    .coi-modal div[style*="display: flex; gap: 8px; align-items: center"] > div {
+        margin-bottom: 8px !important;
+    }
+
+    /* Insurance checkbox grid - 3 columns for mobile */
+    .insurance-checkbox-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Form actions buttons - reorganize into rows for mobile */
+    .form-actions {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        align-items: stretch !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .form-actions button {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+        min-height: 52px !important;
+        font-size: 20px !important;
+        padding: 14px 16px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Hide button text on mobile, show only icons */
+    .form-actions button i {
+        font-size: 20px !important;
+        margin: 0 !important;
+    }
+
+    .form-actions button {
+        font-size: 0 !important;
+    }
+
+    .form-actions button i::before {
+        font-size: 20px !important;
+    }
+
+    /* Group buttons in rows using flexbox */
+    .form-actions .button-row {
+        display: flex !important;
+        gap: 10px !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    .form-actions .button-row button {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    /* Filter section should use full width for form actions */
+    .filter-section .form-actions {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Form grid mobile optimization - centered layout */
+    .form-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 20px !important;
+        align-items: start !important;
+        justify-items: center !important;
+        max-width: 350px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Form groups should be compact */
+    .form-group:not([style*="grid-column: 1 / -1"]) {
+        width: 100% !important;
+        max-width: 150px !important;
+    }
+
+    .form-group {
+        width: 100% !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .form-group label {
+        font-size: 14px !important;
+        margin-bottom: 6px !important;
+        display: block !important;
+    }
+
+    .form-control, .form-control select {
+        width: 100% !important;
+        min-height: 44px !important;
+        padding: 10px 12px !important;
+        font-size: 16px !important;
+        border-radius: 6px !important;
+    }
+
+    /* Fleet filter special handling */
+    .form-group div[style*="display: flex"] {
+        flex-direction: row !important;
+        gap: 6px !important;
+        align-items: center !important;
+    }
+
+    .form-group div[style*="display: flex"] input {
+        flex: 1 !important;
+        text-align: center !important;
+    }
+
+    .form-group div[style*="display: flex"] span {
+        font-size: 18px !important;
+        margin: 0 4px !important;
+    }
+
+    /* All form groups use normal 2-column layout */
+    .form-group {
+        grid-column: span 1 !important;
+    }
+
+    /* Insurance companies box - center it properly */
+    .form-group[style*="grid-column: 1 / -1"] {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    /* Skip Days input should be narrower and left-aligned */
+    #genSkipDays {
+        max-width: 80px !important;
+        margin: 0 !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   POLICY DETAIL PAGE — Mobile Responsive
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+    /* ── Page Header (gradient bar) ── */
+    .pdp-header {
+        padding: 0 12px !important;
+    }
+    .pdp-header-inner {
+        flex-wrap: wrap !important;
+        height: auto !important;
+        padding: 10px 0 !important;
+        gap: 8px !important;
+    }
+    .pdp-back-btn {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+    }
+    .pdp-back-btn span,
+    .pdp-back-btn .fa-arrow-left + span {
+        display: inline !important;
+    }
+    .pdp-type-badge {
+        padding: 3px 8px !important;
+        font-size: 10px !important;
+        order: 3 !important;
+    }
+    .pdp-policy-num {
+        font-size: 16px !important;
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+    }
+    .pdp-premium {
+        font-size: 15px !important;
+    }
+
+    /* ── Status + Action Bar ── */
+    .pdp-status-bar {
+        padding: 10px 12px !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        align-items: stretch !important;
+    }
+    .pdp-status-info {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    .pdp-carrier,
+    .pdp-client {
+        font-size: 12px !important;
+    }
+    .pdp-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    .pdp-actions button {
+        padding: 8px 6px !important;
+        font-size: 12px !important;
+        justify-content: center !important;
+    }
+    .pdp-actions button .fa-save,
+    .pdp-actions button .fa-print,
+    .pdp-actions button .fa-trash {
+        margin-right: 0 !important;
+    }
+
+    /* ── Tab Navigation ── */
+    .pdp-tabs {
+        padding: 0 8px !important;
+        -webkit-overflow-scrolling: touch;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        white-space: nowrap !important;
+        position: relative !important;
+        z-index: 10 !important;
+        touch-action: pan-x !important;
+    }
+    .pdp-tabs .policy-view-tab-btn {
+        padding: 10px 12px !important;
+        font-size: 12px !important;
+        gap: 5px !important;
+        position: relative !important;
+        z-index: 11 !important;
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: rgba(0,0,0,0.1) !important;
+        cursor: pointer !important;
+    }
+
+    /* ── Tab Contents wrapper ── */
+    .pdp-tab-contents {
+        padding: 12px !important;
+    }
+
+    /* ── Overview Tab: 2-col → 1-col ── */
+    .pdp-overview-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .pdp-status-card {
+        grid-column: auto !important;
+    }
+    /* Status fields: 5-col → 2-col */
+    .pdp-status-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0 10px !important;
+    }
+
+    /* ── Documents Tab: 3-col → 1-col ── */
+    .pdp-docs-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .pdp-docs-grid .form-section {
+        padding: 14px !important;
+    }
+
+    /* ── Financials Tab: 2-col → 1-col ── */
+    .pdp-financials-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ── Contact Tab: 2-col → 1-col ── */
+    .pdp-contact-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .pdp-contact-grid > div[style*="grid-column:1/-1"] {
+        grid-column: auto !important;
+    }
+    .pdp-contact-grid div[style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+    /* Contact row label/value: tighter on mobile */
+    .pdp-contact-grid div[style*="grid-template-columns:160px"] {
+        grid-template-columns: 100px 1fr !important;
+    }
+
+    /* ── Cards: reduce padding on mobile ── */
+    .pdp-card,
+    #policyDetailPage .pdp-card {
+        padding: 14px !important;
+    }
+
+    /* ── Tables inside policy detail (vehicles, drivers, coverage) ── */
+    #policyDetailPage table {
+        font-size: 12px !important;
+    }
+    #policyDetailPage table th,
+    #policyDetailPage table td {
+        padding: 6px 5px !important;
+    }
+    /* VIN column: allow wrapping */
+    #policyDetailPage table td[style*="font-family:monospace"] {
+        word-break: break-all !important;
+        font-size: 10px !important;
+    }
+
+    /* ── Inputs/selects inside policy detail ── */
+    #policyDetailPage input,
+    #policyDetailPage select,
+    #policyDetailPage textarea {
+        font-size: 14px !important;
+        padding: 8px !important;
+    }
+
+    /* ── Coverage tab: automotive liability flex row ── */
+    #coverage-view-content div[style*="flex-wrap:wrap"] {
+        gap: 8px 12px !important;
+    }
+
+    /* ── Documents tab: button groups ── */
+    #documents-view-content .form-section > div:first-child {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+    #documents-view-content .form-section button {
+        font-size: 11px !important;
+        padding: 5px 8px !important;
+    }
+    /* Application submission grid */
+    #documents-view-content div[style*="grid-template-columns:1fr 1fr 1fr 1fr"] {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    /* ── Financial producer grid ── */
+    .pdp-financials-grid div[style*="grid-template-columns:1fr auto"] {
+        grid-template-columns: 1fr 60px !important;
+    }
+
+    /* ── Insured tab ── */
+    #policyDetailPage .view-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    /* ── Coverage Tab: side-by-side → stacked vertically ── */
+    .pdp-coverage-grid {
+        grid-template-columns: 1fr !important;
+    }
+    /* Coverage add-row */
+    .pdp-coverage-grid .form-section select {
+        min-width: 0 !important;
+        font-size: 12px !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       ACORD 25 Certificate Viewer — Mobile
+       Full-size readable form inside a scrollable container.
+       User swipes to pan around the form (like a mobile PDF viewer).
+       ═══════════════════════════════════════════════════════════════════ */
+
+    /* The outer acord-container: stay within viewport, clip overflow */
+    .acord-container {
+        max-width: 100vw !important;
+        overflow: hidden !important;
+    }
+
+    /* Header: stack title + buttons vertically */
+    .acord-container > .acord-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 12px !important;
+        gap: 10px !important;
+    }
+    .acord-header h2 {
+        font-size: 16px !important;
+    }
+    .acord-header p {
+        font-size: 12px !important;
+    }
+    /* Hide header action buttons on mobile — bottom bar has the actions */
+    .acord-header > div:last-child {
+        display: none !important;
+    }
+
+    /*
+     * PDF container: the scrollable viewport into the full-size form.
+     * This creates an independent scroll context — body overflow-x:hidden
+     * doesn't prevent THIS element from scrolling its own content.
+     */
+    .acord-container .pdf-container {
+        padding: 0 !important;
+        overflow: scroll !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-x pan-y !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+    }
+
+    /* Inner wrapper: exempt from global max-width clamp, stay at natural size */
+    .acord-container .pdf-container > div {
+        max-width: none !important;
+        width: fit-content !important;
+        height: auto !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+    }
+
+    /* Canvas + Overlay: full size, no transforms, exempt from max-width */
+    #realPdfCanvas {
+        transform: none !important;
+        max-width: none !important;
+        width: 795px !important;
+        height: 1029px !important;
+        display: block !important;
+    }
+    #realFormOverlay {
+        transform: translateZ(1px) !important;
+        max-width: none !important;
+        width: 795px !important;
+        height: 1029px !important;
+        z-index: 10 !important;
+        isolation: isolate !important;
+    }
+    #realPdfCanvas {
+        z-index: 1 !important;
+    }
+    /* ACORD overlay fields: iOS Safari needs appearance:none to respect
+       our sizing, and explicit color to render text visibly. */
+    #realFormOverlay input[type="text"],
+    #realFormOverlay textarea {
+        max-width: none !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        border-radius: 0 !important;
+        background: rgba(255,255,255,0.8) !important;
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+        opacity: 1 !important;
+        height: 11px !important;
+        padding: 0 1px !important;
+        line-height: 11px !important;
+        border: none !important;
+    }
+    #realFormOverlay textarea {
+        height: auto !important;
+    }
+    #realFormOverlay input[type="checkbox"] {
+        max-width: none !important;
+        -webkit-appearance: checkbox !important;
+        width: 11px !important;
+        height: 11px !important;
+        padding: 0 !important;
+    }
+
+    /* Status bar at bottom */
+    .acord-container > div:last-child {
+        padding: 8px 12px !important;
+        flex-wrap: wrap !important;
+    }
+    .acord-container > div:last-child span {
+        font-size: 11px !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       Send COI Modal — Mobile
+       ═══════════════════════════════════════════════════════════════════ */
+    /* Overlay: stretch to fill, no centering offset */
+    #crmCOIModal {
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        padding: 0 !important;
+    }
+    #crmCOIModal .modal-content.coi-modal,
+    #crmCOIModal > .coi-modal,
+    #crmCOIModal > div {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Header: cleaner, tighter */
+    #crmCOIModal .modal-header {
+        padding: 14px 16px !important;
+        background: linear-gradient(135deg, #1e40af, #1d4ed8) !important;
+        flex-shrink: 0 !important;
+    }
+    #crmCOIModal .modal-header h3 {
+        font-size: 16px !important;
+    }
+    /* Hide the X close button — Cancel handles closing */
+    #crmCOIModal .modal-close-btn {
+        display: none !important;
+    }
+
+    /* Body: full width, scrollable, stretch children to fill */
+    #crmCOIModal .modal-body {
+        padding: 16px !important;
+        flex: 1 !important;
+        overflow-y: auto !important;
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Policy info banner: subtle, full width */
+    #crmCOIModal .policy-info-banner {
+        width: calc(100vw - 32px) !important;
+        min-width: 0 !important;
+        padding: 10px 12px !important;
+        margin-bottom: 16px !important;
+        font-size: 13px !important;
+        background: #f0f9ff !important;
+        border: 1px solid #bae6fd !important;
+    }
+
+    /* Form + children: full viewport width minus padding */
+    #crmCOIModal form {
+        width: calc(100vw - 32px) !important;
+        max-width: calc(100vw - 32px) !important;
+        min-width: 0 !important;
+        margin: 0 auto !important;
+    }
+    #crmCOIModal .form-group,
+    #crmCOIModal .form-actions,
+    #crmCOIModal #crmThirdPartyFields {
+        width: calc(100vw - 32px) !important;
+        min-width: 0 !important;
+    }
+
+    /* Form groups: tighter spacing */
+    #crmCOIModal .form-group {
+        margin-bottom: 14px !important;
+    }
+
+    /* Hide the original "+ Add Recipient" button */
+    #crmCOIModal button[onclick*="addCRMCOIEmailRecipient"] {
+        display: none !important;
+    }
+
+    /* Recipient rows: tighter, full width */
+    #crmCOIModal .crm-coi-email-recipient-row {
+        width: 100% !important;
+        min-width: 0 !important;
+        gap: 6px !important;
+        margin-bottom: 6px !important;
+    }
+    #crmCOIModal .crm-coi-email-recipient-row input[type="email"] {
+        padding: 8px !important;
+        font-size: 14px !important;
+    }
+
+    /* Remove/trash button: compact square, icon-only */
+    #crmCOIModal .crm-coi-email-recipient-row button[onclick*="removeCRMCOI"] {
+        padding: 0 !important;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        font-size: 13px !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 6px !important;
+    }
+    #crmCOIModal .coi-remove-label {
+        display: none !important;
+    }
+
+    /* Mobile "+" add button injected by JS */
+    #crmCOIModal .coi-mobile-add-btn {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
+        border: 2px dashed #10b981 !important;
+        background: #f0fdf4 !important;
+        color: #10b981 !important;
+        border-radius: 6px !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-left: auto !important;
+        margin-top: 4px !important;
+    }
+
+    /* Email recipients header: stack label above controls, full width */
+    #crmCOIModal .form-group > div[style*="justify-content: space-between"],
+    #crmCOIModal .form-group > div[style*="justify-content:space-between"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+        width: calc(100vw - 32px) !important;
+    }
+    /* Checkboxes row: side by side, wrap if needed */
+    #crmCOIModal .form-group > div[style*="justify-content"] > div {
+        flex-wrap: wrap !important;
+        flex-direction: row !important;
+        width: 100% !important;
+    }
+    /* Radio group (Myself / Third-Party): always side by side */
+    #crmCOIModal .radio-group {
+        flex-direction: row !important;
+        gap: 16px !important;
+    }
+    /* Force recipients container full width */
+    #crmCOIModal #crmCoiEmailRecipientsContainer {
+        width: calc(100vw - 32px) !important;
+        min-width: calc(100vw - 32px) !important;
+        max-width: calc(100vw - 32px) !important;
+    }
+    #crmCOIModal .crm-coi-email-recipient-row {
+        width: calc(100vw - 32px) !important;
+    }
+
+    /* Checkboxes row */
+    #crmCOIModal #addInsuredCheck,
+    #crmCOIModal #addAgentCheck {
+        transform: scale(1) !important;
+    }
+
+    /* Form actions: full width buttons */
+    #crmCOIModal .form-actions {
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding-top: 14px !important;
+    }
+    #crmCOIModal .form-actions button {
+        width: 100% !important;
+        padding: 12px !important;
+        font-size: 15px !important;
+        border-radius: 8px !important;
+    }
+    #crmCOIModal .btn-submit {
+        order: -1 !important;
+    }
+
+    /* Radio group */
+    #crmCOIModal .radio-group {
+        gap: 16px !important;
+    }
+
+    /* Saved Certificate Holders button */
+    #crmCOIModal #crmThirdPartyFields button[onclick*="showCRMSaved"] {
+        width: 100% !important;
+        padding: 10px !important;
+        font-size: 13px !important;
+    }
+
+    /* Help text */
+    #crmCOIModal .help-text {
+        display: none !important;
+    }
+}

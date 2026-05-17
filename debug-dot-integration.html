@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug DOT Integration</title>
+</head>
+<body>
+    <h1>🔍 Debug DOT Integration</h1>
+
+    <div style="margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+        <h3>Integration Status Check:</h3>
+        <div id="integration-status"></div>
+
+        <h3>Manual DOT Lookup Test:</h3>
+        <button onclick="testDOTLookup('3833739')" style="padding: 10px 20px; margin: 5px;">
+            Test DOT 3833739 (GOLDS CUSTOM SERVICES)
+        </button>
+        <button onclick="testDOTLookup('3342195')" style="padding: 10px 20px; margin: 5px;">
+            Test DOT 3342195 (SKUR TRANSPORT)
+        </button>
+
+        <h3>Simulate Lead Population:</h3>
+        <button onclick="simulateLeadPopulation('3833739')" style="padding: 10px 20px; margin: 5px;">
+            Simulate Lead Population for DOT 3833739
+        </button>
+
+        <div id="results" style="margin-top: 20px; padding: 20px; border: 1px solid #ddd; background: white; border-radius: 4px;">
+            <h4>Results:</h4>
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <!-- Load the actual integration scripts -->
+    <script src="js/vicidial-import-listener.js"></script>
+    <script src="js/vicidial-dot-lookup-integration.js"></script>
+
+    <script>
+        // Check integration status
+        window.addEventListener('load', () => {
+            const statusDiv = document.getElementById('integration-status');
+            const output = document.getElementById('output');
+
+            // Check if functions are loaded
+            const hasImportListener = typeof window.checkRecentAssignments === 'function';
+            const hasDOTLookup = typeof window.performDOTLookupForLead === 'function';
+            const hasTrigger = typeof window.triggerDOTLookupForNewLeads === 'function';
+
+            statusDiv.innerHTML = `
+                <div style="background: ${hasImportListener ? '#d4edda' : '#f8d7da'}; padding: 10px; margin: 5px 0; border-radius: 4px;">
+                    Import Listener: ${hasImportListener ? '✅ Loaded' : '❌ Missing'}
+                </div>
+                <div style="background: ${hasDOTLookup ? '#d4edda' : '#f8d7da'}; padding: 10px; margin: 5px 0; border-radius: 4px;">
+                    DOT Lookup Function: ${hasDOTLookup ? '✅ Loaded' : '❌ Missing'}
+                </div>
+                <div style="background: ${hasTrigger ? '#d4edda' : '#f8d7da'}; padding: 10px; margin: 5px 0; border-radius: 4px;">
+                    DOT Trigger Function: ${hasTrigger ? '✅ Loaded' : '❌ Missing'}
+                </div>
+            `;
+
+            // Check localStorage for leads
+            const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+            output.innerHTML += `
+                <div style="background: #d1ecf1; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                    <strong>LocalStorage Leads:</strong> ${leads.length} leads found
+                    ${leads.length > 0 ? `<br><small>Latest lead: ${JSON.stringify(leads[leads.length - 1])}</small>` : ''}
+                </div>
+            `;
+        });
+
+        // Test DOT lookup API
+        async function testDOTLookup(dotNumber) {
+            const output = document.getElementById('output');
+            output.innerHTML += `<p><strong>Testing DOT ${dotNumber}...</strong></p>`;
+
+            try {
+                const response = await fetch(`/api/test-db/${dotNumber}`);
+                const data = await response.json();
+
+                output.innerHTML += `
+                    <div style="background: #d4edda; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                        <h4>✅ API Response for DOT ${dotNumber}:</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                output.innerHTML += `
+                    <div style="background: #f8d7da; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                        ❌ Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Simulate what should happen when a lead is populated
+        async function simulateLeadPopulation(dotNumber) {
+            const output = document.getElementById('output');
+            output.innerHTML += `<p><strong>Simulating lead population for DOT ${dotNumber}...</strong></p>`;
+
+            // Check if the DOT lookup function exists
+            if (typeof window.performDOTLookupForLead === 'function') {
+                try {
+                    // Call the actual integration function
+                    await window.performDOTLookupForLead('test-lead-id', dotNumber);
+                    output.innerHTML += `
+                        <div style="background: #d4edda; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                            ✅ DOT lookup function called successfully
+                        </div>
+                    `;
+                } catch (error) {
+                    output.innerHTML += `
+                        <div style="background: #f8d7da; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                            ❌ DOT lookup function error: ${error.message}
+                        </div>
+                    `;
+                }
+            } else {
+                output.innerHTML += `
+                    <div style="background: #fff3cd; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                        ⚠️ DOT lookup function not available
+                    </div>
+                `;
+            }
+        }
+
+        // Manual trigger for import detection
+        function triggerImportDetection() {
+            const output = document.getElementById('output');
+            output.innerHTML += `<p><strong>Triggering import detection...</strong></p>`;
+
+            if (typeof window.triggerDOTLookupForNewLeads === 'function') {
+                window.triggerDOTLookupForNewLeads();
+                output.innerHTML += `
+                    <div style="background: #d4edda; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                        ✅ Import detection triggered
+                    </div>
+                `;
+            } else {
+                output.innerHTML += `
+                    <div style="background: #f8d7da; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                        ❌ Import detection function not available
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

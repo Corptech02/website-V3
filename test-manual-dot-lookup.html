@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manual DOT Lookup Test</title>
+    <script src="js/vicidial-dot-lookup-integration.js"></script>
+</head>
+<body>
+    <h1>🔍 Manual DOT Lookup Test</h1>
+
+    <button onclick="testDOTLookup()" style="padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 4px;">
+        Test DOT 3833739 Lookup
+    </button>
+
+    <button onclick="checkIntegrationStatus()" style="padding: 10px 20px; margin: 10px; background: #28a745; color: white; border: none; border-radius: 4px;">
+        Check Integration Status
+    </button>
+
+    <div id="results" style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 4px; min-height: 200px;">
+        <h3>Test Results:</h3>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#333',
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107'
+            };
+
+            output.innerHTML += `
+                <div style="margin: 5px 0; padding: 8px; border-left: 3px solid ${colors[type]}; background: rgba(0,0,0,0.05);">
+                    <span style="color: #666; font-size: 0.8em;">[${timestamp}]</span>
+                    <span style="color: ${colors[type]};">${message}</span>
+                </div>
+            `;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        async function testDOTLookup() {
+            log('🚛 Starting manual DOT lookup test for DOT 3833739...', 'info');
+
+            // Check if the function is available
+            if (typeof window.performDOTLookupForLead === 'function') {
+                log('✅ performDOTLookupForLead function is available', 'success');
+
+                try {
+                    // Call the DOT lookup function
+                    const result = await window.performDOTLookupForLead('test-lead-123', '3833739');
+
+                    if (result) {
+                        log('✅ DOT lookup completed successfully!', 'success');
+                        log('📝 Result: ' + JSON.stringify(result, null, 2), 'success');
+                    } else {
+                        log('⚠️ DOT lookup returned null', 'warning');
+                    }
+                } catch (error) {
+                    log('❌ Error during DOT lookup: ' + error.message, 'error');
+                    console.error('DOT lookup error:', error);
+                }
+            } else {
+                log('❌ performDOTLookupForLead function is not available', 'error');
+            }
+        }
+
+        function checkIntegrationStatus() {
+            log('🔍 Checking DOT integration status...', 'info');
+
+            const functions = [
+                'performDOTLookupForLead',
+                'processCarrierData',
+                'updateLeadWithCarrierData',
+                'extractVehicleData',
+                'extractTrailerData',
+                'addVehicleToLeadFromData',
+                'addTrailerToLeadFromData'
+            ];
+
+            functions.forEach(funcName => {
+                const exists = typeof window[funcName] === 'function';
+                log(`${exists ? '✅' : '❌'} ${funcName}: ${exists ? 'Available' : 'Missing'}`, exists ? 'success' : 'error');
+            });
+
+            // Check localStorage leads
+            const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+            log(`📋 LocalStorage leads: ${leads.length} found`, 'info');
+
+            if (leads.length > 0) {
+                const latestLead = leads[leads.length - 1];
+                log(`📄 Latest lead: ${latestLead.name || 'Unnamed'} (DOT: ${latestLead.dotNumber || 'None'})`, 'info');
+            }
+        }
+
+        // Auto-run status check on load
+        window.addEventListener('load', () => {
+            setTimeout(checkIntegrationStatus, 500);
+        });
+    </script>
+</body>
+</html>

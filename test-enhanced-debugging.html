@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔍 Test Enhanced Debugging</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .button { background: #007bff; color: white; padding: 15px 30px; border: none; border-radius: 6px; cursor: pointer; margin: 10px; font-size: 16px; }
+        .button.success { background: #28a745; }
+        .button.warning { background: #ffc107; color: #212529; }
+        .section { background: #f8f9fa; padding: 25px; border-radius: 6px; margin: 20px 0; }
+        .log { font-family: monospace; font-size: 12px; background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; border-radius: 4px; height: 500px; overflow-y: auto; white-space: pre-wrap; }
+        .alert { padding: 15px; border-radius: 6px; margin: 15px 0; }
+        .alert-info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .alert-success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Enhanced Auto-Hook Debugging</h1>
+        <p>This page tests the enhanced debugging version (v5) of the auto-hook to identify processing issues.</p>
+
+        <div class="alert alert-info">
+            <strong>What This Test Does:</strong><br>
+            • Loads the enhanced auto-hook with detailed debugging<br>
+            • Simulates lead import with DOT number<br>
+            • Shows exactly what the auto-hook processes<br>
+            • Identifies why DOT lookups aren't triggering
+        </div>
+
+        <div class="section">
+            <h3>Test Actions:</h3>
+            <button class="button success" onclick="runEnhancedTest()">🧪 Run Enhanced Debugging Test</button>
+            <button class="button" onclick="clearConsoleLog()">🗑️ Clear Console Log</button>
+            <button class="button warning" onclick="forceProcessExisting()">🔧 Force Process Existing Leads</button>
+        </div>
+
+        <div class="alert alert-success">
+            <strong>Expected Output:</strong><br>
+            You should now see detailed debugging messages showing exactly which leads are being examined,
+            their DOT numbers, and whether they qualify for processing.
+        </div>
+
+        <div id="console-log" class="log">Loading enhanced auto-hook debugging (v5)...\n</div>
+    </div>
+
+    <!-- Load the ENHANCED auto-hook (version 5) -->
+    <script src="js/auto-dot-lookup-hook.js?v=5"></script>
+
+    <script>
+        const consoleLog = document.getElementById('console-log');
+
+        function addToLog(message, color = '#333') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            consoleLog.innerHTML += `<span style="color: ${color};">${logEntry}</span>`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+
+        function clearConsoleLog() {
+            consoleLog.innerHTML = 'Console log cleared...\n';
+        }
+
+        // Capture ALL console messages
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            const message = args.join(' ');
+            addToLog(message, '#0066cc');
+        };
+
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            const message = args.join(' ');
+            addToLog('ERROR: ' + message, '#dc3545');
+        };
+
+        async function runEnhancedTest() {
+            addToLog('🧪 Starting enhanced debugging test...', '#28a745');
+
+            // Create a test lead with DOT number
+            const testLead = {
+                id: 'debug-test-' + Date.now(),
+                name: 'DEBUG TEST TRUCKING CO',
+                contact: 'Test Contact',
+                phone: '555-DEBUG',
+                email: 'test@debug.com',
+                dotNumber: '3591601', // Same as lead 150401
+                stage: 'New',
+                createdAt: new Date().toISOString(),
+                notes: 'Debug test lead for enhanced auto-hook testing'
+            };
+
+            addToLog('📝 Created debug test lead:', '#666');
+            addToLog(`   Name: ${testLead.name}`, '#666');
+            addToLog(`   DOT: ${testLead.dotNumber}`, '#666');
+            addToLog(`   ID: ${testLead.id}`, '#666');
+
+            try {
+                // Get current leads
+                let leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                addToLog(`📊 Current leads count: ${leads.length}`, '#666');
+
+                // Add the test lead
+                leads.push(testLead);
+
+                addToLog('💾 Saving test lead to localStorage - this should trigger enhanced debugging...', '#0066cc');
+                addToLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '#666');
+
+                // This should trigger the auto-hook with enhanced debugging
+                localStorage.setItem('insurance_leads', JSON.stringify(leads));
+
+                addToLog('✅ Test lead saved - watch for detailed auto-hook processing logs above', '#28a745');
+
+                // Check results after processing
+                setTimeout(() => {
+                    addToLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '#666');
+                    addToLog('🔍 Checking results after auto-hook processing...', '#0066cc');
+
+                    const updatedLeads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                    const processedLead = updatedLeads.find(l => l.id === testLead.id);
+
+                    if (processedLead) {
+                        addToLog('📊 Test lead results:', '#0066cc');
+                        addToLog(`   State: "${processedLead.state || 'EMPTY'}"`, processedLead.state ? '#28a745' : '#dc3545');
+                        addToLog(`   Years in Business: "${processedLead.yearsInBusiness || 'EMPTY'}"`, processedLead.yearsInBusiness ? '#28a745' : '#dc3545');
+                        addToLog(`   Commodity Hauled: "${processedLead.commodityHauled || 'EMPTY'}"`, processedLead.commodityHauled ? '#28a745' : '#dc3545');
+
+                        if (processedLead.state && processedLead.yearsInBusiness && processedLead.commodityHauled) {
+                            addToLog('🎉 SUCCESS: Enhanced auto-hook worked!', '#28a745');
+                        } else {
+                            addToLog('❌ ISSUE: Auto-hook processed but data not populated', '#dc3545');
+                        }
+                    } else {
+                        addToLog('❌ ERROR: Test lead disappeared', '#dc3545');
+                    }
+                }, 8000); // Wait longer for processing
+
+            } catch (error) {
+                addToLog(`❌ Test error: ${error.message}`, '#dc3545');
+            }
+        }
+
+        function forceProcessExisting() {
+            addToLog('🔧 Force processing all existing leads with DOT numbers...', '#ffc107');
+
+            if (window.forceProcessAllDOTLeads) {
+                try {
+                    window.forceProcessAllDOTLeads();
+                    addToLog('✅ Force processing triggered - watch for detailed logs above', '#28a745');
+                } catch (error) {
+                    addToLog(`❌ Force processing error: ${error.message}`, '#dc3545');
+                }
+            } else {
+                addToLog('❌ forceProcessAllDOTLeads function not available', '#dc3545');
+            }
+        }
+
+        // Check status on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addToLog('🔧 Enhanced auto-hook debugging loaded (v5)', '#28a745');
+
+                // Check if functions are available
+                if (window.debugDOTLookupHook) {
+                    addToLog('✅ Debug functions available', '#28a745');
+
+                    const status = window.debugDOTLookupHook();
+                    addToLog(`📊 Current status: ${JSON.stringify(status)}`, '#666');
+                } else {
+                    addToLog('❌ Debug functions NOT available', '#dc3545');
+                }
+
+                // Check localStorage hook
+                const setItemStr = localStorage.setItem.toString();
+                if (setItemStr.includes('dotLookupInProgress')) {
+                    addToLog('✅ Enhanced localStorage hook active', '#28a745');
+                } else {
+                    addToLog('❌ localStorage hook may not be active', '#dc3545');
+                }
+
+                addToLog('🚀 Ready to run enhanced debugging test!', '#0066cc');
+            }, 1500);
+        });
+    </script>
+</body>
+</html>

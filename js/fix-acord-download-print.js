@@ -4,20 +4,14 @@ console.log('🔧 Fixing ACORD Download and Print functions...');
 // Store the current policy when viewer is created
 const originalCreateViewer = window.createRealACORDViewer;
 if (originalCreateViewer) {
-    window.createRealACORDViewer = async function(policyId, policyData) {
-        console.log('🎯 Fix-ACORD intercepted call with:', policyId, policyData);
-
-        // Use passed policy data if available (from vigagency admin), otherwise get from localStorage (from CRM)
-        let policy = policyData;
-        if (!policy) {
-            console.log('📦 Getting policy from localStorage for CRM compatibility');
-            const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
-            policy = policies.find(p =>
-                p.policyNumber === policyId ||
-                p.id === policyId ||
-                String(p.id) === String(policyId)
-            );
-        }
+    window.createRealACORDViewer = async function(policyId) {
+        // Get and store policy data globally
+        const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+        const policy = policies.find(p =>
+            p.policyNumber === policyId ||
+            p.id === policyId ||
+            String(p.id) === String(policyId)
+        );
 
         // Store both policy and ID globally
         window.currentCOIPolicy = policy;
@@ -25,8 +19,8 @@ if (originalCreateViewer) {
 
         console.log('📌 Stored policy globally:', policyId, policy);
 
-        // Call original function with BOTH parameters
-        return await originalCreateViewer.call(this, policyId, policy);
+        // Call original function
+        return await originalCreateViewer.call(this, policyId);
     };
 }
 
@@ -302,12 +296,21 @@ document.addEventListener('click', function(e) {
             return; // Let the document system handle its own download
         }
 
-        // Check for download buttons (but NOT Import button)
+        // Check for download buttons (but exclude agent report downloads and policy imports)
         if ((element.textContent.includes('Download') ||
             element.innerHTML.includes('fa-download') ||
             (element.onclick && element.onclick.toString().includes('download'))) &&
-            !element.textContent.includes('Import') &&
-            !element.onclick.toString().includes('openImportModal')) {
+            // Exclude agent report downloads
+            !element.onclick.toString().includes('downloadAgentReport') &&
+            !element.classList.contains('agent-report-download') &&
+            !element.closest('[data-download-type="agent-report"]') &&
+            // Exclude policy import buttons
+            !element.onclick.toString().includes('importExistingPolicyForClient') &&
+            !element.textContent.includes('Import Existing Policy') &&
+            // Exclude auto-import to market buttons
+            !element.classList.contains('auto-import-market-btn') &&
+            !element.onclick.toString().includes('autoImportToMarket') &&
+            !element.textContent.includes('Auto-Import to Market')) {
 
             console.log('🛑 Intercepted download click');
             e.preventDefault();
@@ -317,10 +320,14 @@ document.addEventListener('click', function(e) {
             return false;
         }
 
-        // Check for print buttons
-        if (element.textContent.includes('Print') ||
+        // Check for print buttons — ONLY intercept when ACORD viewer is active
+        if ((element.textContent.includes('Print') ||
             element.innerHTML.includes('fa-print') ||
-            (element.onclick && element.onclick.toString().includes('print'))) {
+            (element.onclick && element.onclick.toString().includes('print'))) &&
+            // Only intercept if ACORD viewer is visible on the page
+            document.querySelector('.pdf-container, .acord-viewer, #realPdfCanvas') &&
+            // Don't intercept commission statement print
+            !(element.onclick && element.onclick.toString().includes('printCommissionStatement'))) {
 
             console.log('🛑 Intercepted print click');
             e.preventDefault();

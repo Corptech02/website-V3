@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚛 Test Vehicle Auto-Population - DOT Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .success { color: #16a34a; font-weight: bold; }
+        .error { color: #dc2626; font-weight: bold; }
+        .info { color: #2563eb; font-weight: bold; }
+        .step { background: #f8f9fa; padding: 15px; border-radius: 6px; margin: 10px 0; border-left: 4px solid #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 Vehicle Auto-Population Test</h1>
+
+        <div class="step">
+            <h3>🔧 Enhancement Applied:</h3>
+            <ul>
+                <li>✅ Auto-hook now creates vehicles from DOT data when available</li>
+                <li>✅ Updated to version 7 to force browser refresh</li>
+                <li>✅ Vehicles include proper structure: year, make, model, VIN, value, deductible, type, GVWR</li>
+                <li>✅ Server sync saves vehicles to database using syncLeadToServer()</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>🧪 Test Steps:</h3>
+            <ol>
+                <li class="info">Go to lead 150420 (GOLDS CUSTOM SERVICES INC) - DOT 3833739</li>
+                <li class="info">Click the "DOT Lookup" button in Company Information section</li>
+                <li class="info">Watch console for vehicle creation messages:</li>
+                <ul>
+                    <li><code>🚛 VEHICLE AUTO: Checking DOT data for vehicle info...</code></li>
+                    <li><code>🚛 VEHICLE AUTO: Found vehicle data: {TRUCK_UNITS: "4", OWNTRACT: "3", TRMTRACT: "1"}</code></li>
+                    <li><code>🚛 VEHICLE AUTO: Added Truck - 2020 Freightliner Cascadia</code></li>
+                    <li><code>🚛 VEHICLE AUTO: Added Tractor - 2019 Peterbilt 579</code></li>
+                    <li><code>💾 VEHICLE AUTO: Saved X vehicles to server</code></li>
+                </ul>
+                <li class="success">Scroll down to Vehicle Information section</li>
+                <li class="success">Verify vehicles appear automatically!</li>
+                <li class="success">Close profile and reopen - vehicles should persist!</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>🎯 Expected Results:</h3>
+            <p class="success">For DOT 3833739 (GOLDS CUSTOM SERVICES), should create:</p>
+            <ul>
+                <li>✅ <strong>4 Trucks:</strong> 2020 Freightliner Cascadia with VINs DOT3833739TRK1-4</li>
+                <li>✅ <strong>3 Tractors:</strong> 2019 Peterbilt 579 with VINs DOT3833739TRC1-3</li>
+                <li>✅ <strong>Values:</strong> Trucks $75,000 each, Tractors $120,000 each</li>
+                <li>✅ <strong>GVWR:</strong> 80,000 lbs for all vehicles</li>
+                <li>✅ <strong>Deductibles:</strong> $2,500 for all vehicles</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Vehicle Data Source:</h3>
+            <p><strong>DOT 3833739 API Response:</strong></p>
+            <pre style="background: #f0f0f0; padding: 10px; border-radius: 4px;">
+{
+  "TRUCK_UNITS": "4",     → Creates 4 Trucks
+  "POWER_UNITS": "4",
+  "OWNTRACT": "3",        → Creates 3 Tractors
+  "TRMTRACT": "1"         → Backup for tractors
+}
+            </pre>
+        </div>
+
+        <div class="step">
+            <h3>🐛 Debug Functions:</h3>
+            <p>Open console and use these functions to debug:</p>
+            <ul>
+                <li><code>debugDOTLookupHook()</code> - Check hook status</li>
+                <li><code>manualDOTLookupTrigger(150420, 3833739)</code> - Manual test</li>
+                <li><code>forceProcessAllDOTLeads()</code> - Process all leads</li>
+            </ul>
+        </div>
+
+        <button onclick="window.open('/#leads', '_blank')" style="background: #16a34a; color: white; padding: 15px 30px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold;">
+            🚛 Test Vehicle Auto-Population Now
+        </button>
+    </div>
+</body>
+</html>

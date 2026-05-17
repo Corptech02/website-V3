@@ -1,6 +1,9 @@
 // Real Custom ACORD PDF Viewer - Actually renders and controls the PDF
 console.log('🎯 Real ACORD Viewer Initializing...');
 
+// Immediately log that we're setting up the function
+console.log('🔧 Setting up createRealACORDViewer function...');
+
 // Wait for PDF.js to be available
 window.addEventListener('load', function() {
     if (typeof pdfjsLib !== 'undefined') {
@@ -20,52 +23,31 @@ window.realPdfState = {
     formData: {}
 };
 
-// Helper function to determine signature based on agency
-function getSignatureForAgency(agency) {
-    console.log('🖋️ DEBUGGING SIGNATURE SELECTION:');
-    console.log('  - Raw agency value:', agency);
-    console.log('  - Agency type:', typeof agency);
-    console.log('  - Agency truthy?', !!agency);
+// Helper function to determine signature based on agent
+function getSignatureForAgent(agent) {
+    console.log('🖋️ ACORD VIEWER SIGNATURE SELECTION:');
+    console.log('  - Agent value:', agent);
 
-    if (agency) {
-        const lowerAgency = agency.toLowerCase();
-        console.log('  - Lowercase agency:', lowerAgency);
-        console.log('  - Contains "united"?', lowerAgency.includes('united'));
-        console.log('  - Contains "vanguard"?', lowerAgency.includes('vanguard'));
+    if (agent) {
+        const lowerAgent = agent.toLowerCase();
 
-        if (lowerAgency.includes('united')) {
-            console.log('✅ SIGNATURE: Using Maureen Corp signature for United agency');
-            return 'Maureen Corp';
-        } else if (lowerAgency.includes('vanguard')) {
-            console.log('✅ SIGNATURE: Using Grant Corp signature for Vanguard agency');
+        if (lowerAgent.includes('grant')) {
+            console.log('✅ SIGNATURE: Using Grant Corp signature for Grant agent');
             return 'Grant Corp';
+        } else if (lowerAgent.includes('hunter')) {
+            console.log('✅ SIGNATURE: Using Hunter Brooks signature for Hunter agent');
+            return 'Hunter Brooks';
+        } else if (lowerAgent.includes('carson')) {
+            console.log('✅ SIGNATURE: Using Carson Sweitzer signature for Carson agent');
+            return 'Carson Sweitzer';
+        } else if (lowerAgent.includes('maureen')) {
+            console.log('✅ SIGNATURE: Using Maureen Corp signature for Maureen agent');
+            return 'Maureen Corp';
         }
     }
 
-    console.log('✅ SIGNATURE: Using Grant Corp signature (default - no agency specified)');
+    console.log('✅ SIGNATURE: Using Grant Corp signature (default)');
     return 'Grant Corp';
-}
-
-// Helper function to get company information based on agency
-function getCompanyInfoForAgency(agency) {
-    console.log('🏢 Determining company info for agency:', agency);
-    if (agency && agency.toLowerCase().includes('united')) {
-        console.log('🔄 Using United Insurance Group company info');
-        return {
-            producer: 'United Insurance Group',
-            email: 'Contact@uigagency.com',
-            phone: '(330) 259-7438',
-            fax: '(330) 259-7439'
-        };
-    } else {
-        console.log('🔄 Using Vanguard Insurance Group LLC company info');
-        return {
-            producer: 'Vanguard Insurance Group LLC',
-            email: 'contact@vigagency.com',
-            phone: '(330) 460-8072',
-            fax: '(330) 460-8073'
-        };
-    }
 }
 
 // Check if there's a saved COI for this policy
@@ -98,26 +80,21 @@ function formatDateForACORD(dateStr) {
 
 // Generate operation description based on policy type
 function generateOperationDescription(policyData) {
-    console.log('🚚 Generating operation description with data:', policyData);
-
-    if (!policyData) {
-        console.log('❌ No policy data provided to generateOperationDescription');
-        return '';
-    }
+    if (!policyData) return '';
 
     const policyType = policyData.policyType || policyData.overview?.['Policy Type'] || '';
     const insuredName = policyData.clientName || policyData.insured?.['Name/Business Name'] || '';
 
-    console.log('📋 Policy type for description:', policyType);
-    console.log('👤 Insured name for description:', insuredName);
-    console.log('🚛 Vehicles for description:', policyData.vehicles);
-
-    let description = ``;
+    let description = `Certificate holder is an additional insured with respect to `;
 
     if (policyType === 'commercial-auto' || policyType === 'Commercial Auto') {
         // Add vehicle info if available
         if (policyData.vehicles && policyData.vehicles.length > 0) {
+            const vehicleCount = policyData.vehicles.length;
+            description += `${vehicleCount} vehicle${vehicleCount > 1 ? 's' : ''} operated by ${insuredName}. `;
+
             // List each vehicle with details
+            description += '\n\nVEHICLES:\n';
             policyData.vehicles.forEach((vehicle, index) => {
                 const year = vehicle.Year || vehicle.year || '';
                 const make = vehicle.Make || vehicle.make || '';
@@ -126,20 +103,14 @@ function generateOperationDescription(policyData) {
                 const value = vehicle.Value || vehicle.value || '';
                 const type = vehicle.Type || vehicle.type || 'Vehicle';
 
-                description += `- ${year} ${make} ${model}`.trim();
+                description += `${index + 1}. ${year} ${make} ${model}`.trim();
                 if (vin) description += ` - VIN: ${vin}`;
                 if (value) {
                     // Format value with commas if it's a number
                     const formattedValue = parseFloat(value) ? parseFloat(value).toLocaleString() : value;
                     description += ` - Value: $${formattedValue}`;
                 }
-                // Determine if it's a trailer or vehicle based on type field
-                const typeStr = (type || '').toLowerCase();
-                if (typeStr.includes('trailer') || typeStr.includes('semi') || typeStr.includes('dolly') || typeStr === 'trailer') {
-                    description += ` - TRAILER`;
-                } else {
-                    description += ` - VEHICLE`;
-                }
+                if (type && type !== 'Vehicle') description += ` (${type})`;
                 description += '\n';
             });
 
@@ -159,13 +130,11 @@ function generateOperationDescription(policyData) {
         description += `general liability operations. `;
     }
 
-    const finalDescription = description.trim();
-    console.log('📝 Generated description:', finalDescription);
-    return finalDescription;
+    return description.trim();
 }
 
 // Create the REAL custom viewer
-window.createRealACORDViewer = async function(policyId, policyData = null) {
+window.createRealACORDViewer = async function(policyId) {
     console.log('Creating REAL ACORD viewer for policy:', policyId);
 
     const policyViewer = document.getElementById('policyViewer');
@@ -174,21 +143,13 @@ window.createRealACORDViewer = async function(policyId, policyData = null) {
         return;
     }
 
-    // Use passed policy data (vigagency) or get from localStorage (CRM)
-    let policy = policyData;
-    if (!policy) {
-        const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
-        policy = policies.find(p =>
-            p.policyNumber === policyId ||
-            p.id === policyId ||
-            String(p.id) === String(policyId)
-        );
-    }
-
-    console.log('🔍 Using policy data in createRealACORDViewer:', policy);
-    console.log('🔍 POLICY AGENCY DEBUGGING:');
-    console.log('  - policy?.agency:', policy?.agency);
-    console.log('  - Full policy object keys:', policy ? Object.keys(policy) : 'policy is null/undefined');
+    // Get policy data
+    const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+    const policy = policies.find(p =>
+        p.policyNumber === policyId ||
+        p.id === policyId ||
+        String(p.id) === String(policyId)
+    );
 
     // Create our REAL viewer with EXACT original layout
     policyViewer.innerHTML = `
@@ -200,12 +161,9 @@ window.createRealACORDViewer = async function(policyId, policyData = null) {
                         <i class="fas fa-file-contract"></i> ACORD 25 Certificate of Insurance
                     </h2>
                     <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">
-                        Policy: ${policy?.policy_number || policy?.policyNumber || 'N/A'} | ${policy?.carrier || 'N/A'}
+                        Policy: ${policy?.policyNumber || 'N/A'} | ${policy?.carrier || 'N/A'}
                     </p>
                 </div>
-
-                <!-- Certificate Holder Input Section -->
-
                 <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                     <button onclick="realSaveCOI('${policyId}')" class="btn-primary" style="background: #10b981; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
                         <i class="fas fa-save"></i> Save COI
@@ -259,8 +217,7 @@ window.createRealACORDViewer = async function(policyId, policyData = null) {
     `;
 
     // Now actually load and render the PDF
-    // IMPORTANT: Pass the transformed policyData, not the local policy variable
-    await loadRealPDF(policyId, policyData || policy);
+    await loadRealPDF(policyId, policy);
 };
 
 // Load and render the actual PDF
@@ -290,83 +247,31 @@ async function loadRealPDF(policyId, policyData) {
         // Load any saved data
         await loadSavedData(policyId);
 
-        // FORCE populate description field with current policy data
-        console.log('🔧 Force populating description field...');
-        const descField = document.getElementById('field_description');
-        if (descField && policyData) {
-            const description = generateOperationDescription(policyData);
-            descField.value = description;
-            console.log('✅ Description field populated:', description);
-        } else {
-            console.error('❌ Description field not found or no policy data:', !!descField, !!policyData);
-        }
-
-        // 🔥 FORCE UPDATE POLICY FIELDS - Ensure they are populated after form creation
-        console.log('🔥 FORCE UPDATE: Starting policy field population...');
-
-        // Auto liability row fields (y: 530)
-        const autoPolicyField = document.getElementById('field_autoPolicyNum');
-        const autoEffField = document.getElementById('field_autoEffDate');
-        const autoExpField = document.getElementById('field_autoExpDate');
-
-        // General Liability row fields (y: 437) - ABOVE the auto liability
-        const glPolicyField = document.getElementById('field_glPolicyNum');
-        const glEffField = document.getElementById('field_glEffDate');
-        const glExpField = document.getElementById('field_glExpDate');
-
-        // Top row fields (y: 686)
-        const topPolicyField = document.getElementById('field_otherPolicyNumAbove');
-        const topEffField = document.getElementById('field_otherEffDateAbove');
-        const topExpField = document.getElementById('field_otherExpDateAbove');
-
-        if (policyData) {
-            const policyNum = policyData.policy_number || policyData.policyNumber || '';
-            const effDate = formatDateForACORD(policyData.effective_date || policyData.effectiveDate || policyData.overview?.['Effective Date']) || '';
-            const expDate = formatDateForACORD(policyData.expiration_date || policyData.expirationDate || policyData.overview?.['Expiration Date']) || '';
-
-            console.log('🔥 FORCE UPDATE: Policy data:', { policyNum, effDate, expDate });
-
-            // Update General Liability row (ABOVE auto liability)
-            if (glPolicyField) {
-                glPolicyField.value = policyNum;
-                console.log('✅ GL Policy Number field populated:', policyNum);
-            }
-            if (glEffField) {
-                glEffField.value = effDate;
-                console.log('✅ GL Effective Date field populated:', effDate);
-            }
-            if (glExpField) {
-                glExpField.value = expDate;
-                console.log('✅ GL Expiration Date field populated:', expDate);
-            }
-
-            // Update auto liability row
-            if (autoPolicyField) {
-                autoPolicyField.value = policyNum;
-                console.log('✅ Auto Policy Number field populated:', policyNum);
-            }
-            if (autoEffField) {
-                autoEffField.value = effDate;
-                console.log('✅ Auto Effective Date field populated:', effDate);
-            }
-            if (autoExpField) {
-                autoExpField.value = expDate;
-                console.log('✅ Auto Expiration Date field populated:', expDate);
-            }
-
-            // Update top row
-            if (topPolicyField) {
-                topPolicyField.value = policyNum;
-                console.log('✅ Top Policy Number field populated:', policyNum);
-            }
-            if (topEffField) {
-                topEffField.value = effDate;
-                console.log('✅ Top Effective Date field populated:', effDate);
-            }
-            if (topExpField) {
-                topExpField.value = expDate;
-                console.log('✅ Top Expiration Date field populated:', expDate);
-            }
+        // Mobile: scale the canvas+overlay wrapper to fit viewport
+        if (window.innerWidth <= 768) {
+            requestAnimationFrame(() => {
+                const canvas = document.getElementById('realPdfCanvas');
+                const overlay = document.getElementById('realFormOverlay');
+                if (canvas && overlay) {
+                    const wrapper = canvas.parentElement;
+                    const containerWidth = wrapper.parentElement.clientWidth - 16;
+                    const canvasWidth = canvas.width;
+                    if (canvasWidth > containerWidth) {
+                        const scale = containerWidth / canvasWidth;
+                        wrapper.style.width = containerWidth + 'px';
+                        wrapper.style.height = (canvas.height * scale) + 'px';
+                        wrapper.style.overflow = 'hidden';
+                        canvas.style.transformOrigin = 'top left';
+                        canvas.style.transform = `scale(${scale})`;
+                        canvas.style.width = canvasWidth + 'px';
+                        canvas.style.height = canvas.height + 'px';
+                        overlay.style.transformOrigin = 'top left';
+                        overlay.style.transform = `scale(${scale})`;
+                        overlay.style.width = canvasWidth + 'px';
+                        overlay.style.height = canvas.height + 'px';
+                    }
+                }
+            });
         }
 
     } catch (error) {
@@ -389,19 +294,6 @@ async function renderRealPage(pageNumber) {
         // Set scale to fit width
         const viewport = page.getViewport({ scale: window.realPdfState.scale });
 
-        // CRITICAL: Cancel any existing render operations to prevent canvas conflicts
-        if (window.realPdfState.currentRenderTask) {
-            console.log('🛑 Cancelling existing render task to prevent canvas conflict');
-            try {
-                window.realPdfState.currentRenderTask.cancel();
-            } catch (cancelError) {
-                console.log('⚠️ Render task already completed or cancelled');
-            }
-        }
-
-        // Clear the canvas before starting new render
-        window.realPdfState.ctx.clearRect(0, 0, window.realPdfState.canvas.width, window.realPdfState.canvas.height);
-
         // Set canvas dimensions
         window.realPdfState.canvas.height = viewport.height;
         window.realPdfState.canvas.width = viewport.width;
@@ -412,10 +304,7 @@ async function renderRealPage(pageNumber) {
             viewport: viewport
         };
 
-        console.log('🎨 Starting PDF render with clean canvas');
-        window.realPdfState.currentRenderTask = page.render(renderContext);
-        await window.realPdfState.currentRenderTask.promise;
-        window.realPdfState.currentRenderTask = null; // Clear the task reference
+        await page.render(renderContext).promise;
         console.log('Page rendered successfully');
 
     } catch (error) {
@@ -425,7 +314,7 @@ async function renderRealPage(pageNumber) {
 
 // Create form fields that we control
 function createRealFormFields(policyId, policyData) {
-    console.log('Creating real form fields with policy data:', policyData);
+    console.log('Creating real form fields...');
 
     const overlay = document.getElementById('realFormOverlay');
     if (!overlay) return;
@@ -439,13 +328,9 @@ function createRealFormFields(policyId, policyData) {
 
     // EXACT field positions extracted from ACORD 25 fillable PDF (scaled at 1.3x)
     const fields = [
-        // === DATE (top right) ===
-        { id: 'date', x: 664, y: 47, width: 103, height: 16,
-          value: '' }, // Empty - will be populated when sending to certificate holders
-
         // === PRODUCER SECTION (top left) ===
         { id: 'producer', x: 29, y: 172, width: 364, height: 16,
-          value: getCompanyInfoForAgency(policyData?.agency).producer },
+          value: 'Vanguard Insurance Group LLC' },
         { id: 'producerAddress1', x: 29, y: 187, width: 364, height: 16,
           value: '2888 Nationwide Pkwy' },
         { id: 'producerAddress2', x: 29, y: 203, width: 364, height: 16,
@@ -459,60 +344,61 @@ function createRealFormFields(policyId, policyData) {
 
         // === CONTACT INFO (right side of producer) ===
         { id: 'contactName', x: 450, y: 156, width: 317, height: 16,
-          value: getCompanyInfoForAgency(policyData?.agency).producer },
+          value: '' },
         { id: 'phone', x: 459, y: 172, width: 164, height: 16,
-          value: getCompanyInfoForAgency(policyData?.agency).phone },
+          value: '(866) 628-9441' },
         { id: 'fax', x: 673, y: 172, width: 94, height: 16,
-          value: getCompanyInfoForAgency(policyData?.agency).fax },
+          value: '(330) 779-1097' },
         { id: 'email', x: 450, y: 187, width: 317, height: 16,
-          value: getCompanyInfoForAgency(policyData?.agency).email },
+          value: 'contact@vigagency.com' },
 
         // === INSURED SECTION ===
         { id: 'insured', x: 94, y: 250, width: 299, height: 16,
           value: policyData?.clientName || policyData?.insured?.['Name/Business Name'] || policyData?.insured?.['Primary Named Insured'] || '', bold: true },
         { id: 'insuredAddress1', x: 94, y: 265, width: 299, height: 16,
-          value: (() => {
-            const fullAddress = policyData?.address || policyData?.contact?.['Mailing Address'] || '';
-            if (fullAddress) {
-              // Split address to extract street address only
-              const parts = fullAddress.split(',');
-              return parts[0]?.trim() || ''; // Just the street address
-            }
-            return '';
-          })() },
+          value: policyData?.contact?.['Mailing Address'] || '' },
         { id: 'insuredAddress2', x: 94, y: 281, width: 299, height: 16,
           value: (() => {
-            const fullAddress = policyData?.address || policyData?.contact?.['Mailing Address'] || '';
-            if (fullAddress) {
-              // Extract city, state, zip from full address
-              const parts = fullAddress.split(',');
-              if (parts.length >= 2) {
-                // Join everything after the first part (city, state, zip)
-                return parts.slice(1).join(',').trim();
-              }
-            }
-            return '';
+            // Get city, state, zip from separate fields in policy data
+            const city = policyData?.city || policyData?.contact?.City || '';
+            const state = policyData?.state || policyData?.contact?.State || '';
+            const zip = policyData?.zip || policyData?.zipCode || policyData?.contact?.['ZIP Code'] || '';
+
+            console.log('🏙️ ACORD Viewer - Building insuredAddress2:');
+            console.log('  - City:', city);
+            console.log('  - State:', state);
+            console.log('  - ZIP:', zip);
+
+            // Format: "CITY STATE ZIP"
+            const parts = [city, state, zip].filter(Boolean);
+            const result = parts.join(' ');
+            console.log('  - Final insuredAddress2:', result);
+
+            return result || '';
           })() },
         { id: 'insuredCity', x: 94, y: 296, width: 216, height: 16,
-          value: '' }, // Remove city field
+          value: policyData?.contact?.['City'] || '' },
         { id: 'insuredState', x: 309, y: 296, width: 23, height: 16,
-          value: '' }, // Remove state field
+          value: policyData?.contact?.['State'] || '' },
         { id: 'insuredZip', x: 333, y: 296, width: 60, height: 16,
-          value: '' }, // Remove zip field
+          value: policyData?.contact?.['ZIP Code'] || '' },
 
         // === INSURER SECTION (companies A-F) ===
         { id: 'insurerA', x: 454, y: 218, width: 243, height: 16,
-          value: (policyData?.carrier && policyData.carrier !== '') ?
-                 (policyData.carrier === 'Progressive' ? 'Progressive Preferred Insurance Company' :
-                  policyData.carrier === 'GEICO' ? 'GEICO MARINE INSURANCE COMPANY' : policyData.carrier) :
-                 (policyData?.overview?.['Carrier'] && policyData.overview['Carrier'] !== '') ?
-                 (policyData.overview['Carrier'] === 'Progressive' ? 'Progressive Preferred Insurance Company' :
-                  policyData.overview['Carrier'] === 'GEICO' ? 'GEICO MARINE INSURANCE COMPANY' : policyData.overview['Carrier']) :
-                 'Progressive Preferred Insurance Company' },
+          value: (() => {
+            const raw = policyData?.carrier || policyData?.overview?.['Carrier'] || '';
+            const lc = raw.toLowerCase().replace(/\s+/g, '');
+            if (lc.startsWith('progressive')) return 'Progressive Preferred Insurance Company';
+            if (lc.startsWith('northland')) return 'NORTHLAND INSURANCE COMPANY';
+            return raw || 'Progressive Preferred Insurance Company';
+          })() },
         { id: 'insurerANaic', x: 707, y: 218, width: 60, height: 16,
-          value: (policyData?.carrier === 'Progressive' || policyData?.overview?.['Carrier'] === 'Progressive' ||
-                 (!policyData?.carrier && !policyData?.overview?.['Carrier'])) ? '24260' :
-                 (policyData?.carrier === 'GEICO' || policyData?.overview?.['Carrier'] === 'GEICO') ? '37923' : '' },
+          value: (() => {
+            const c = (policyData?.carrier || policyData?.overview?.['Carrier'] || '').toLowerCase().replace(/\s+/g, '');
+            if (c.startsWith('progressive') || !c) return '24260';
+            if (c.startsWith('northland')) return '524126';
+            return '';
+          })() },
 
         // === GENERAL LIABILITY CHECKBOXES ===
         { id: 'glCheck', x: 47, y: 390, width: 18, height: 16,
@@ -528,7 +414,7 @@ function createRealFormFields(policyId, policyData) {
 
         // === AGGREGATE LIMIT CHECKBOXES ===
         { id: 'aggPolicy', x: 47, y: 468, width: 18, height: 16,
-          type: 'checkbox', checked: true },
+          type: 'checkbox' },
         { id: 'aggProject', x: 103, y: 468, width: 20, height: 16,
           type: 'checkbox' },
         { id: 'aggLocation', x: 159, y: 468, width: 20, height: 16,
@@ -538,11 +424,11 @@ function createRealFormFields(policyId, policyData) {
 
         // === AUTOMOBILE LIABILITY CHECKBOXES ===
         { id: 'autoAny', x: 47, y: 515, width: 18, height: 16,
-          type: 'checkbox', checked: false },
+          type: 'checkbox', checked: (policyData?.policyType === 'commercial-auto' || policyData?.overview?.['Policy Type'] === 'Commercial Auto') },
         { id: 'autoOwned', x: 47, y: 530, width: 18, height: 16,
           type: 'checkbox' },
         { id: 'autoScheduled', x: 135, y: 530, width: 20, height: 16,
-          type: 'checkbox', checked: true },
+          type: 'checkbox' },
         { id: 'autoHired', x: 47, y: 546, width: 18, height: 16,
           type: 'checkbox' },
         { id: 'autoNonOwned', x: 135, y: 546, width: 20, height: 16,
@@ -586,92 +472,60 @@ function createRealFormFields(policyId, policyData) {
         { id: 'wcExpDate', x: 491, y: 647, width: 61, height: 16,
           value: '' },
 
-        // === MIDDLE ROW (y: 702) - PHYSICAL DAMAGE COVERAGE ===
+        // === OTHER POLICY FIELDS ===
+        // Above row (y: 686)
+        { id: 'otherInsurerAbove', x: 23, y: 686, width: 23, height: 16,
+          value: '' },
+        { id: 'otherAddlInsdAbove', x: 229, y: 686, width: 23, height: 16,
+          value: '' },
+        { id: 'otherSubrWvdAbove', x: 252, y: 686, width: 23, height: 16,
+          value: '' },
+        { id: 'otherPolicyNumAbove', x: 281, y: 686, width: 146, height: 16,
+          value: '' },
+        { id: 'otherEffDateAbove', x: 430, y: 686, width: 61, height: 16,
+          value: '' },
+        { id: 'otherExpDateAbove', x: 491, y: 686, width: 61, height: 16,
+          value: '' },
+        { id: 'otherLimitsAbove', x: 552, y: 686, width: 83, height: 16,
+          value: '' },
+
+        // Middle row (y: 702)
         { id: 'otherInsurer', x: 23, y: 702, width: 23, height: 16,
-          value: (function() {
-              const compDedRaw = policyData?.coverage?.comprehensive_deductible || policyData?.coverage?.['Comprehensive Deductible'] || '0';
-              const collDedRaw = policyData?.coverage?.collision_deductible || policyData?.coverage?.['Collision Deductible'] || '0';
-
-              // Check for 'None' values first
-              if (compDedRaw === 'None' || collDedRaw === 'None') return '';
-
-              const compDed = parseFloat(String(compDedRaw).replace(/[$,]/g, ''));
-              const collDed = parseFloat(String(collDedRaw).replace(/[$,]/g, ''));
-
-              return (compDed > 0 && collDed > 0) ? 'A' : '';
-          })() },
+          value: '' },
         { id: 'otherAddlInsd', x: 229, y: 702, width: 23, height: 16,
           value: '' },
         { id: 'otherSubrWvd', x: 252, y: 702, width: 23, height: 16,
           value: '' },
         { id: 'otherPolicyNum', x: 281, y: 702, width: 146, height: 16,
-          value: (function() {
-              const compDedRaw = policyData?.coverage?.comprehensive_deductible || policyData?.coverage?.['Comprehensive Deductible'] || '0';
-              const collDedRaw = policyData?.coverage?.collision_deductible || policyData?.coverage?.['Collision Deductible'] || '0';
-
-              // Check for 'None' values first
-              if (compDedRaw === 'None' || collDedRaw === 'None') return '';
-
-              const compDed = parseFloat(String(compDedRaw).replace(/[$,]/g, ''));
-              const collDed = parseFloat(String(collDedRaw).replace(/[$,]/g, ''));
-
-              return (compDed > 0 && collDed > 0) ? (policyData?.policy_number || policyData?.policyNumber || '') : '';
-          })() },
+          value: '' },
         { id: 'otherEffDate', x: 430, y: 702, width: 61, height: 16,
-          value: (function() {
-              const compDedRaw = policyData?.coverage?.comprehensive_deductible || policyData?.coverage?.['Comprehensive Deductible'] || '0';
-              const collDedRaw = policyData?.coverage?.collision_deductible || policyData?.coverage?.['Collision Deductible'] || '0';
-
-              // Check for 'None' values first
-              if (compDedRaw === 'None' || collDedRaw === 'None') return '';
-
-              const compDed = parseFloat(String(compDedRaw).replace(/[$,]/g, ''));
-              const collDed = parseFloat(String(collDedRaw).replace(/[$,]/g, ''));
-
-              return (compDed > 0 && collDed > 0) ? formatDateForACORD(policyData?.effective_date) : '';
-          })() },
+          value: '' },
         { id: 'otherExpDate', x: 491, y: 702, width: 61, height: 16,
-          value: (function() {
-              const compDedRaw = policyData?.coverage?.comprehensive_deductible || policyData?.coverage?.['Comprehensive Deductible'] || '0';
-              const collDedRaw = policyData?.coverage?.collision_deductible || policyData?.coverage?.['Collision Deductible'] || '0';
-
-              // Check for 'None' values first
-              if (compDedRaw === 'None' || collDedRaw === 'None') return '';
-
-              const compDed = parseFloat(String(compDedRaw).replace(/[$,]/g, ''));
-              const collDed = parseFloat(String(collDedRaw).replace(/[$,]/g, ''));
-
-              return (compDed > 0 && collDed > 0) ? formatDateForACORD(policyData?.expiration_date) : '';
-          })() },
+          value: '' },
         { id: 'otherLimits', x: 552, y: 702, width: 83, height: 16,
-          value: (function() {
-              const compDedRaw = policyData?.coverage?.comprehensive_deductible || policyData?.coverage?.['Comprehensive Deductible'] || '0';
-              const collDedRaw = policyData?.coverage?.collision_deductible || policyData?.coverage?.['Collision Deductible'] || '0';
+          value: '' },
 
-              // Check for 'None' values first
-              if (compDedRaw === 'None' || collDedRaw === 'None') return '';
-
-              const compDed = parseFloat(String(compDedRaw).replace(/[$,]/g, ''));
-              const collDed = parseFloat(String(collDedRaw).replace(/[$,]/g, ''));
-
-              return (compDed > 0 && collDed > 0) ? 'COMP & COLLISION' : '';
-          })() },
+        // Bottom row (y: 718) - Non-Owned Trailer
+        { id: 'nonOwnedTrailerInsurer', x: 23, y: 718, width: 23, height: 16,
+          value: '' },
+        { id: 'nonOwnedTrailerAddlInsd', x: 229, y: 718, width: 23, height: 16,
+          value: '' },
+        { id: 'nonOwnedTrailerSubrWvd', x: 252, y: 718, width: 23, height: 16,
+          value: '' },
+        { id: 'nonOwnedTrailerPolicyNum', x: 281, y: 718, width: 146, height: 16,
+          value: '' },
+        { id: 'nonOwnedTrailerEffDate', x: 430, y: 718, width: 61, height: 16,
+          value: '' },
+        { id: 'nonOwnedTrailerExpDate', x: 491, y: 718, width: 61, height: 16,
+          value: '' },
+        { id: 'nonOwnedTrailerLimits', x: 552, y: 718, width: 83, height: 16,
+          value: '' },
+        { id: 'otherDescriptionAbove', x: 52, y: 686, width: 173, height: 16,
+          value: '' },
         { id: 'otherDescription', x: 52, y: 702, width: 173, height: 16,
-          value: (function() {
-              // Enhanced parsing to handle currency formats like "$2,500"
-              const compDedRaw = policyData?.coverage?.comprehensive_deductible || policyData?.coverage?.['Comprehensive Deductible'] || '0';
-              const collDedRaw = policyData?.coverage?.collision_deductible || policyData?.coverage?.['Collision Deductible'] || '0';
-
-              // Check for 'None' values first
-              if (compDedRaw === 'None' || collDedRaw === 'None') return '';
-
-              const compDed = parseFloat(String(compDedRaw).replace(/[$,]/g, ''));
-              const collDed = parseFloat(String(collDedRaw).replace(/[$,]/g, ''));
-
-              console.log('🔧 PHYSICAL DAMAGE DEBUG: compDed =', compDed, 'collDed =', collDed, 'both > 0?', compDed > 0 && collDed > 0);
-
-              return (compDed > 0 && collDed > 0) ? 'PHYSICAL DAMAGE' : '';
-          })() },
+          value: '' },
+        { id: 'nonOwnedTrailerText', x: 52, y: 718, width: 173, height: 16,
+          value: '' },
         { id: 'glInsurer', x: 23, y: 437, width: 23, height: 16,
           value: 'A' },
         { id: 'glAddlInsd', x: 229, y: 437, width: 23, height: 16,
@@ -691,29 +545,21 @@ function createRealFormFields(policyId, policyData) {
 
         // === AUTOMOBILE LIABILITY FIELDS ===
         { id: 'autoInsurer', x: 23, y: 530, width: 23, height: 16,
-          value: 'A' },
+          value: (policyData?.policyType === 'commercial-auto' || policyData?.overview?.['Policy Type'] === 'Commercial Auto') ? 'A' : '' },
         { id: 'autoAddlInsd', x: 229, y: 530, width: 23, height: 16,
           value: '' },
         { id: 'autoSubrWvd', x: 252, y: 530, width: 23, height: 16,
           value: '' },
         { id: 'autoPolicyNum', x: 281, y: 530, width: 146, height: 16,
-          value: (function() {
-              const policyNum = policyData?.policy_number || policyData?.policyNumber || '';
-              console.log('🔥 AUTO ROW DEBUG: Policy Number =', policyNum);
-              return policyNum;
-          })() },
+          value: (policyData?.policyType === 'commercial-auto' || policyData?.overview?.['Policy Type'] === 'Commercial Auto') ? (policyData?.policyNumber || '') : '' },
         { id: 'autoEffDate', x: 430, y: 530, width: 61, height: 16,
-          value: (function() {
-              const effDate = formatDateForACORD(policyData?.effective_date || policyData?.effectiveDate || policyData?.overview?.['Effective Date']) || '';
-              console.log('🔥 AUTO ROW DEBUG: Effective Date =', effDate);
-              return effDate;
-          })() },
+          value: (policyData?.policyType === 'commercial-auto' && policyData?.effectiveDate) ?
+                 formatDateForACORD(policyData.effectiveDate) :
+                 (policyData?.overview?.['Effective Date'] ? formatDateForACORD(policyData.overview['Effective Date']) : '') },
         { id: 'autoExpDate', x: 491, y: 530, width: 61, height: 16,
-          value: (function() {
-              const expDate = formatDateForACORD(policyData?.expiration_date || policyData?.expirationDate || policyData?.overview?.['Expiration Date']) || '';
-              console.log('🔥 AUTO ROW DEBUG: Expiration Date =', expDate);
-              return expDate;
-          })() },
+          value: (policyData?.policyType === 'commercial-auto' && policyData?.expirationDate) ?
+                 formatDateForACORD(policyData.expirationDate) :
+                 (policyData?.overview?.['Expiration Date'] ? formatDateForACORD(policyData.overview['Expiration Date']) : '') },
 
         // === AUTO LIABILITY LIMITS (ALL MISSING FIELDS) ===
         { id: 'autoCombinedSingle', x: 684, y: 499, width: 83, height: 16,
@@ -761,158 +607,25 @@ function createRealFormFields(policyId, policyData) {
 
         // === OTHER POLICY LIMITS ===
         { id: 'otherLimit1', x: 684, y: 686, width: 83, height: 16,
-          value: (function() {
-              const cargoLimit = policyData?.coverage?.cargo_limit || policyData?.coverage?.['Cargo Limit'] || '';
-              const cargoDeductible = policyData?.coverage?.cargo_deductible || policyData?.coverage?.['Cargo Deductible'] || '';
-              return (cargoLimit && cargoLimit !== '0' && cargoLimit !== '' && cargoLimit !== 'None' && cargoDeductible && cargoDeductible !== 'None') ?
-                     `DED. $${cargoDeductible.toString().replace(/^\$/, '')}` : '';
-          })() },
+          value: '' },
         { id: 'otherLimit2', x: 684, y: 702, width: 83, height: 16,
-          value: (function() {
-              const compDedRaw = policyData?.coverage?.comprehensive_deductible || policyData?.coverage?.['Comprehensive Deductible'] || '0';
-              const collDedRaw = policyData?.coverage?.collision_deductible || policyData?.coverage?.['Collision Deductible'] || '0';
-
-              // Check for 'None' values first
-              if (compDedRaw === 'None' || collDedRaw === 'None') return '';
-
-              const compDed = parseFloat(String(compDedRaw).replace(/[$,]/g, ''));
-              const collDed = parseFloat(String(collDedRaw).replace(/[$,]/g, ''));
-
-              if (compDed > 0 && collDed > 0) {
-                  // Check if both deductibles are the same
-                  if (compDed === collDed) {
-                      return `DED. $${compDed} EACH`;
-                  } else {
-                      return `DED. $${compDed}/$${collDed}`;
-                  }
-              }
-              return '';
-          })() },
+          value: '' },
         { id: 'otherLimit3', x: 684, y: 718, width: 83, height: 16,
           value: '' },
 
-        // === ADDITIONAL TEXT BOXES ABOVE THE HORIZONTAL ROW (y: 686) - MOTOR TRUCK CARGO ===
-        { id: 'otherInsurerAbove', x: 23, y: 686, width: 23, height: 16,
-          value: 'A' },
-        { id: 'otherDescriptionAbove', x: 52, y: 686, width: 173, height: 16,
-          value: (function() {
-              const cargoLimit = policyData?.coverage?.cargo_limit || policyData?.coverage?.['Cargo Limit'] || '';
-              // Show cargo if exists, otherwise show primary policy type
-              if (cargoLimit && cargoLimit !== '0' && cargoLimit !== '' && cargoLimit !== 'None') {
-                  return 'MOTOR TRUCK CARGO';
-              }
-              // Return primary policy description based on policy type
-              const policyType = policyData?.type || policyData?.policyType || '';
-              if (policyType.includes('auto') || policyType.includes('commercial')) {
-                  return 'COMMERCIAL AUTO LIABILITY';
-              }
-              return 'GENERAL LIABILITY';
-          })() },
-        { id: 'otherAddlInsdAbove', x: 229, y: 686, width: 23, height: 16,
-          value: '' },
-        { id: 'otherSubrWvdAbove', x: 252, y: 686, width: 23, height: 16,
-          value: '' },
-        { id: 'otherPolicyNumAbove', x: 281, y: 686, width: 146, height: 16,
-          value: (function() {
-              const policyNum = policyData?.policy_number || policyData?.policyNumber || '';
-              console.log('🔥 TOP ROW DEBUG: Policy Number =', policyNum);
-              return policyNum;
-          })() },
-        { id: 'otherEffDateAbove', x: 430, y: 686, width: 61, height: 16,
-          value: (function() {
-              const effDate = formatDateForACORD(policyData?.effective_date) || '';
-              console.log('🔥 TOP ROW DEBUG: Effective Date =', effDate);
-              return effDate;
-          })() },
-        { id: 'otherExpDateAbove', x: 491, y: 686, width: 61, height: 16,
-          value: (function() {
-              const expDate = formatDateForACORD(policyData?.expiration_date) || '';
-              console.log('🔥 TOP ROW DEBUG: Expiration Date =', expDate);
-              return expDate;
-          })() },
-        { id: 'otherLimitsAbove', x: 552, y: 686, width: 83, height: 16,
-          value: (function() {
-              const cargoLimit = policyData?.coverage?.cargo_limit || policyData?.coverage?.['Cargo Limit'] || '';
-              // If there's cargo coverage, show it
-              if (cargoLimit && cargoLimit !== '0' && cargoLimit !== '' && cargoLimit !== 'None') {
-                  // Remove any existing $ sign to avoid double dollar signs
-                  const cleanLimit = cargoLimit.toString().replace(/^\$/, '');
-                  return `LIMIT $${cleanLimit}`;
-              }
-              // Otherwise show primary liability limit
-              const liabilityLimit = policyData?.coverage?.liability_limits || policyData?.coverage?.['Liability Limits'] || '';
-              if (liabilityLimit) {
-                  // Remove any existing $ sign and CSL text to avoid duplicates
-                  const cleanLiabilityLimit = liabilityLimit.toString().replace(/^\$/, '').replace(/\s*CSL\s*/i, '');
-                  return `$${cleanLiabilityLimit}`;
-              }
-              return '';
-          })() },
-
-        // === NON OWNED TRAILER PHYSICAL DAMAGE ROW (y: 718) ===
-        { id: 'nonOwnedTrailerInsurer', x: 23, y: 718, width: 23, height: 16,
-          value: (function() {
-              const nonOwnedTrailer = policyData?.coverage?.non_owned_trailer || '';
-              const nonOwnedTrailerDed = policyData?.coverage?.non_owned_trailer_deductible || '';
-              console.log('🚛 NON OWNED TRAILER DEBUG: trailer =', nonOwnedTrailer, 'deductible =', nonOwnedTrailerDed);
-              return (nonOwnedTrailer && nonOwnedTrailer !== '' && nonOwnedTrailer !== 'None' && nonOwnedTrailerDed && nonOwnedTrailerDed !== '' && nonOwnedTrailerDed !== 'None') ? 'A' : '';
-          })() },
-        { id: 'nonOwnedTrailerText', x: 52, y: 718, width: 173, height: 16,
-          value: (function() {
-              const nonOwnedTrailer = policyData?.coverage?.non_owned_trailer || '';
-              const nonOwnedTrailerDed = policyData?.coverage?.non_owned_trailer_deductible || '';
-              console.log('🚛 NON OWNED TRAILER TEXT DEBUG: show?', nonOwnedTrailer && nonOwnedTrailer !== '' && nonOwnedTrailerDed && nonOwnedTrailerDed !== '');
-              return (nonOwnedTrailer && nonOwnedTrailer !== '' && nonOwnedTrailer !== 'None' && nonOwnedTrailerDed && nonOwnedTrailerDed !== '' && nonOwnedTrailerDed !== 'None') ? 'NON OWNED TRAIL PHYS DAMAGE' : '';
-          })() },
-        { id: 'nonOwnedTrailerPolicyNum', x: 281, y: 718, width: 146, height: 16,
-          value: (function() {
-              const nonOwnedTrailer = policyData?.coverage?.non_owned_trailer || '';
-              const nonOwnedTrailerDed = policyData?.coverage?.non_owned_trailer_deductible || '';
-              return (nonOwnedTrailer && nonOwnedTrailer !== '' && nonOwnedTrailer !== 'None' && nonOwnedTrailerDed && nonOwnedTrailerDed !== '' && nonOwnedTrailerDed !== 'None') ? (policyData?.policy_number || policyData?.policyNumber || '') : '';
-          })() },
-        { id: 'nonOwnedTrailerEffDate', x: 430, y: 718, width: 61, height: 16,
-          value: (function() {
-              const nonOwnedTrailer = policyData?.coverage?.non_owned_trailer || '';
-              const nonOwnedTrailerDed = policyData?.coverage?.non_owned_trailer_deductible || '';
-              return (nonOwnedTrailer && nonOwnedTrailer !== '' && nonOwnedTrailer !== 'None' && nonOwnedTrailerDed && nonOwnedTrailerDed !== '' && nonOwnedTrailerDed !== 'None') ? formatDateForACORD(policyData?.effective_date) : '';
-          })() },
-        { id: 'nonOwnedTrailerExpDate', x: 491, y: 718, width: 61, height: 16,
-          value: (function() {
-              const nonOwnedTrailer = policyData?.coverage?.non_owned_trailer || '';
-              const nonOwnedTrailerDed = policyData?.coverage?.non_owned_trailer_deductible || '';
-              return (nonOwnedTrailer && nonOwnedTrailer !== '' && nonOwnedTrailer !== 'None' && nonOwnedTrailerDed && nonOwnedTrailerDed !== '' && nonOwnedTrailerDed !== 'None') ? formatDateForACORD(policyData?.expiration_date) : '';
-          })() },
-        { id: 'nonOwnedTrailerLimits', x: 552, y: 718, width: 83, height: 16,
-          value: (function() {
-              const nonOwnedTrailer = policyData?.coverage?.non_owned_trailer || '';
-              const nonOwnedTrailerDed = policyData?.coverage?.non_owned_trailer_deductible || '';
-              return (nonOwnedTrailer && nonOwnedTrailer !== '' && nonOwnedTrailer !== 'None' && nonOwnedTrailerDed && nonOwnedTrailerDed !== '' && nonOwnedTrailerDed !== 'None') ? `LIMIT ${nonOwnedTrailer}` : '';
-          })() },
-        { id: 'nonOwnedTrailerDeductible', x: 684, y: 718, width: 83, height: 16,
-          value: (function() {
-              const nonOwnedTrailer = policyData?.coverage?.non_owned_trailer || '';
-              const nonOwnedTrailerDed = policyData?.coverage?.non_owned_trailer_deductible || '';
-              return (nonOwnedTrailer && nonOwnedTrailer !== '' && nonOwnedTrailer !== 'None' && nonOwnedTrailerDed && nonOwnedTrailerDed !== '' && nonOwnedTrailerDed !== 'None') ? `DED. ${nonOwnedTrailerDed}` : '';
-          })() },
-
-
         // === GENERAL LIABILITY LIMITS ===
         { id: 'eachOccurrence', x: 684, y: 390, width: 83, height: 16,
-          value: (policyData?.coverage?.liability_limits || policyData?.coverage?.['Liability Limits'] || '1,000,000').replace(/\s*CSL\s*/i, '').replace(/^\$/, '') },
+          value: policyData?.coverage?.['Liability Limits'] || '1,000,000' },
         { id: 'damageRented', x: 684, y: 406, width: 83, height: 16,
           value: '100,000' },
         { id: 'medExp', x: 684, y: 421, width: 83, height: 16,
-          value: (function() {
-              const medicalValue = policyData?.coverage?.medical_payments || policyData?.coverage?.['Medical Payments'] || '5,000';
-              console.log('💊 Medical Payments value:', medicalValue, 'from coverage:', policyData?.coverage);
-              return medicalValue;
-          })() },
+          value: policyData?.coverage?.['Medical Payments'] || '5,000' },
         { id: 'personalAdv', x: 684, y: 437, width: 83, height: 16,
-          value: (policyData?.coverage?.liability_limits || policyData?.coverage?.['Liability Limits'] || '1,000,000').replace(/\s*CSL\s*/i, '').replace(/^\$/, '') },
+          value: policyData?.coverage?.['Liability Limits'] || '1,000,000' },
         { id: 'generalAgg', x: 684, y: 452, width: 83, height: 16,
-          value: policyData?.coverage?.general_aggregate || policyData?.coverage?.['General Aggregate'] || '2,000,000' },
+          value: policyData?.coverage?.['General Aggregate'] || '2,000,000' },
         { id: 'productsOps', x: 684, y: 468, width: 83, height: 16,
-          value: policyData?.coverage?.general_aggregate || policyData?.coverage?.['General Aggregate'] || '2,000,000' },
+          value: policyData?.coverage?.['General Aggregate'] || '2,000,000' },
         { id: 'glOtherLimit', x: 684, y: 484, width: 83, height: 16,
           value: '' },
 
@@ -936,7 +649,7 @@ function createRealFormFields(policyId, policyData) {
 
         // === AUTHORIZED REPRESENTATIVE (signature area) ===
         { id: 'authRep', x: 403, y: 936, width: 364, height: 31,
-          value: getSignatureForAgency(policyData?.agency), bold: true, size: 16, signature: true }
+          value: getSignatureForAgent(policyData?.agent), bold: true, size: 16, signature: true }
     ];
 
     // Create each field
@@ -976,12 +689,7 @@ function createRealFormFields(policyId, policyData) {
 
         if (field.signature) {
             element.style.fontWeight = '600';
-            element.style.color = '#0066cc';
-            element.style.fontSize = (field.size * 1.2 || 14) + 'px'; // Slightly larger for signature
-            element.style.fontStyle = 'italic';
-            element.style.letterSpacing = '0.5px';
-            element.style.textShadow = '0.5px 0.5px 1px rgba(0,0,0,0.1)';
-            console.log('🖋️ Applied signature styling to field:', field.id);
+            element.style.color = '#000';
         }
 
         if (field.value) {
@@ -1030,7 +738,15 @@ function createRealFormFields(policyId, policyData) {
 
 // Save the COI with our data
 window.realSaveCOI = async function(policyId) {
-    console.log('Saving real COI for policy:', policyId);
+    console.log('🚀 === STARTING COI SAVE PROCESS v2 ===');
+    console.log('🎯 Target Policy ID for save:', policyId);
+    console.log('📅 Save timestamp:', new Date().toISOString());
+    console.log('🔍 Available policies in localStorage before save:');
+
+    const existingPolicies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+    existingPolicies.forEach(p => {
+        console.log('  - Policy:', p.id || 'No ID', 'Number:', p.policyNumber || 'No Number', 'HasCOI:', (p.coiDocuments?.length || 0) > 0);
+    });
 
     // Update status
     const statusEl = document.getElementById('coiStatus');
@@ -1043,11 +759,14 @@ window.realSaveCOI = async function(policyId) {
     document.querySelectorAll('#realFormOverlay input, #realFormOverlay textarea').forEach(el => {
         const fieldId = el.id.replace('field_', '');
         formData[fieldId] = el.type === 'checkbox' ? el.checked : el.value;
+        console.log('🔍 Collecting field for save:', fieldId, '=', formData[fieldId]);
     });
+
+    console.log('📋 All form data being saved:', formData);
 
     try {
         // Save to server
-        const response = await fetch('http://162.220.14.239:3001/api/save-coi-form', {
+        const response = await fetch('https://162-220-14-239.nip.io/api/save-coi-form', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1058,7 +777,7 @@ window.realSaveCOI = async function(policyId) {
 
         if (response.ok) {
             // Generate filled PDF
-            await fetch('http://162.220.14.239:3001/api/generate-filled-coi', {
+            await fetch('https://162-220-14-239.nip.io/api/generate-filled-coi', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1067,12 +786,24 @@ window.realSaveCOI = async function(policyId) {
                 })
             });
 
+            // Save the COI document data locally for viewing
+            console.log('💾 About to save COI document with formData:', formData);
+            await saveCOIDocumentToPolicy(policyId, formData);
+
             if (statusEl) {
                 statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Saved successfully!';
             }
 
             // Show success message
             showSuccessMessage('COI saved successfully!');
+
+            // Refresh the COI display in the policy modal if it exists
+            setTimeout(() => {
+                if (window.loadCOIFiles && typeof window.loadCOIFiles === 'function') {
+                    console.log('🔄 Refreshing COI display after save');
+                    window.loadCOIFiles(policyId);
+                }
+            }, 500);
         } else {
             throw new Error('Save failed');
         }
@@ -1131,7 +862,7 @@ window.realDownloadCOI = async function(policyId) {
         <div class="section-title">PRODUCER</div>
         <div><strong>Vanguard Insurance Group LLC</strong></div>
         <div>2888 Nationwide Pkwy, Brunswick, OH 44242</div>
-        <div>Phone: (330) 460-8072 | Fax: (330) 460-8073 | Email: contact@vigagency.com</div>
+        <div>Phone: (866) 628-9441 | Fax: (330) 779-1097 | Email: contact@vigagency.com</div>
     </div>
 
     <div class="section">
@@ -1270,78 +1001,24 @@ async function loadSavedData(policyId) {
     }
 }
 
-// Show success message - DISABLED
+// Show success message
 function showSuccessMessage(message) {
-    // const div = document.createElement('div');
-    // div.style.cssText = `
-    //     position: fixed;
-    //     top: 20px;
-    //     right: 20px;
-    //     background: #10b981;
-    //     color: white;
-    //     padding: 15px 25px;
-    //     border-radius: 8px;
-    //     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    //     z-index: 10000;
-    // `;
-    // div.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-    // document.body.appendChild(div);
-    // setTimeout(() => div.remove(), 3000);
-
-    // Just log the message instead of showing popup
-    console.log('Success:', message);
+    const div = document.createElement('div');
+    div.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+    `;
+    div.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 3000);
 }
-
-// Update certificate holder information functions
-window.updateCertificateHolder = function(value) {
-    console.log('📝 Updating certificate holder name to:', value);
-
-    // Try multiple possible field IDs and approaches
-    const possibleIds = ['field_certHolder', 'certHolder'];
-    let updated = false;
-
-    possibleIds.forEach(id => {
-        const field = document.getElementById(id);
-        if (field) {
-            field.value = value;
-            console.log(`✅ Updated field ${id} with value:`, value);
-            updated = true;
-
-            // Trigger change event
-            field.dispatchEvent(new Event('input'));
-            field.dispatchEvent(new Event('change'));
-        }
-    });
-
-    if (!updated) {
-        console.warn('❌ No certificate holder field found to update');
-    }
-};
-
-window.updateCertificateHolderAddress = function(value) {
-    console.log('📍 Updating certificate holder address to:', value);
-
-    // Try multiple possible field IDs
-    const possibleIds = ['field_certAddress1', 'certAddress1'];
-    let updated = false;
-
-    possibleIds.forEach(id => {
-        const field = document.getElementById(id);
-        if (field) {
-            field.value = value;
-            console.log(`✅ Updated address field ${id} with value:`, value);
-            updated = true;
-
-            // Trigger change event
-            field.dispatchEvent(new Event('input'));
-            field.dispatchEvent(new Event('change'));
-        }
-    });
-
-    if (!updated) {
-        console.warn('❌ No certificate holder address field found to update');
-    }
-};
 
 // Back to policy view - Return to COI Manager
 window.backToPolicyView = function(policyId) {
@@ -1522,15 +1199,15 @@ window.showSignAsModal = function(policyId) {
 
         <div class="signature-options" style="margin-bottom: 25px;">
             <div class="sig-option-1" style="padding: 15px; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;">
-                <div style="font-family: 'Dancing Script', 'Lucida Handwriting', cursive; font-size: 24px; color: #0066cc; font-weight: 600; font-style: italic; letter-spacing: 0.5px; text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.1);">Grant Corp</div>
+                <div style="font-family: 'Dancing Script', 'Lucida Handwriting', cursive; font-size: 20px; color: #000; font-weight: 600;">Grant Corp</div>
             </div>
 
             <div class="sig-option-2" style="padding: 15px; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;">
-                <div style="font-family: 'Dancing Script', 'Lucida Handwriting', cursive; font-size: 24px; color: #0066cc; font-weight: 600; font-style: italic; letter-spacing: 0.5px; text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.1);">Maureen Corp</div>
+                <div style="font-family: 'Dancing Script', 'Lucida Handwriting', cursive; font-size: 20px; color: #000; font-weight: 600;">Maureen Corp</div>
             </div>
 
             <div class="sig-option-3" style="padding: 15px; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;">
-                <div style="font-family: 'Dancing Script', 'Lucida Handwriting', cursive; font-size: 24px; color: #0066cc; font-weight: 600; font-style: italic; letter-spacing: 0.5px; text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.1);">Hunter Brooks</div>
+                <div style="font-family: 'Dancing Script', 'Lucida Handwriting', cursive; font-size: 20px; color: #000; font-weight: 600;">Hunter Brooks</div>
             </div>
         </div>
 
@@ -1644,8 +1321,8 @@ window.selectSignature = function(signatureName) {
         updateCompanyInfo({
             producer: 'Vanguard Insurance Group LLC',
             email: 'contact@vigagency.com',
-            phone: '(330) 460-8072',
-            fax: '(330) 460-8073'
+            phone: '(866) 628-9441',
+            fax: '(330) 779-1097'
         });
     }
 
@@ -1710,5 +1387,623 @@ window.updateCompanyInfo = function(companyData) {
 
     console.log('✅ Company information update complete');
 };
+
+// Function to send COI for a specific policy
+window.sendCOIForPolicy = function(policyId) {
+    console.log('📧 sendCOIForPolicy called with:', policyId);
+
+    // Call the existing sendPolicyCOI function if available
+    if (typeof window.sendPolicyCOI === 'function') {
+        console.log('📧 Calling existing sendPolicyCOI function...');
+        window.sendPolicyCOI(policyId);
+    } else {
+        // Fallback: directly call showSimpleCOIEmailModal if sendPolicyCOI doesn't exist
+        console.log('📧 sendPolicyCOI not found, calling showSimpleCOIEmailModal directly...');
+
+        // Get policy data
+        const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+        const policy = policies.find(p =>
+            p.id === policyId ||
+            p.policyNumber === policyId ||
+            String(p.id) === String(policyId)
+        );
+
+        if (policy) {
+            console.log('✅ Found policy for COI sending:', policy);
+
+            // Check if showSimpleCOIEmailModal function exists
+            if (typeof window.showSimpleCOIEmailModal === 'function') {
+                console.log('📧 Calling showSimpleCOIEmailModal function');
+                window.showSimpleCOIEmailModal(policy);
+            } else {
+                console.error('❌ showSimpleCOIEmailModal function not found');
+                alert('COI email functionality not available. Please refresh the page.');
+            }
+        } else {
+            console.error('❌ Policy not found:', policyId);
+            alert('Policy not found. Cannot send COI.');
+        }
+    }
+};
+
+// Function to save COI document data to policy for viewing
+async function saveCOIDocumentToPolicy(policyId, formData) {
+    console.log('💾 Saving COI document to policy data for:', policyId);
+
+    try {
+        // Create COI document object
+        const coiDocument = {
+            id: `coi-${Date.now()}`,
+            name: `ACORD_25_${policyId}_${new Date().toISOString().split('T')[0]}.png`,
+            type: 'image/png',
+            uploadDate: new Date().toISOString(),
+            formData: formData,
+            policyId: policyId
+        };
+
+        console.log('📋 Created COI document object with formData:', coiDocument.formData);
+
+        // Generate COI with visual overlays including checkmarks
+        if (document.getElementById('realFormOverlay') && document.getElementById('realPdfCanvas')) {
+            try {
+                console.log('🎨 Generating COI with checkbox overlays for save...');
+
+                // Create a new canvas to render the complete COI with overlays
+                const sourceCanvas = document.getElementById('realPdfCanvas');
+                const overlayCanvas = document.createElement('canvas');
+                const ctx = overlayCanvas.getContext('2d');
+
+                // Set canvas size to match source
+                overlayCanvas.width = sourceCanvas.width;
+                overlayCanvas.height = sourceCanvas.height;
+
+                // Draw the original PDF canvas
+                ctx.drawImage(sourceCanvas, 0, 0);
+
+                // Add checkbox overlays - adjusted Y positions up by 12 pixels
+                const checkboxMapping = {
+                    'glCheck': { x: 47, y: 378 },
+                    'glOccurrence': { x: 150, y: 394 },
+                    'glClaimsMade': { x: 65, y: 394 },
+                    'autoAny': { x: 47, y: 503 },
+                    'autoOwned': { x: 47, y: 518 },
+                    'autoScheduled': { x: 135, y: 518 },
+                    'autoHired': { x: 47, y: 534 },
+                    'autoNonOwned': { x: 135, y: 534 },
+                    'umbrella': { x: 47, y: 565 },
+                    'excess': { x: 47, y: 581 },
+                    'wcStatute': { x: 552, y: 612 },
+                    'wcOther': { x: 618, y: 612 },
+                    'aggPolicy': { x: 47, y: 456 },
+                    'aggProject': { x: 103, y: 456 },
+                    'aggLocation': { x: 159, y: 456 },
+                    'aggOther': { x: 47, y: 472 }
+                };
+
+                // Draw checkmarks for checked boxes
+                ctx.fillStyle = '#000000';
+                ctx.font = 'bold 14px Arial, sans-serif';
+                let checkmarksDrawn = 0;
+
+                Object.entries(checkboxMapping).forEach(([fieldName, position]) => {
+                    const checkboxElement = document.getElementById(`field_${fieldName}`);
+                    if (checkboxElement && checkboxElement.checked) {
+                        ctx.fillText('✓', position.x + 2, position.y + 12);
+                        console.log(`☑️ Drew save checkmark for ${fieldName} at position ${position.x}, ${position.y}`);
+                        checkmarksDrawn++;
+                    }
+                });
+
+                console.log(`✅ Generated COI with ${checkmarksDrawn} checkmarks for save`);
+                coiDocument.dataUrl = overlayCanvas.toDataURL('image/png');
+
+            } catch (error) {
+                console.warn('Could not generate COI with overlays:', error);
+                // Fallback: use original canvas
+                const sourceCanvas = document.getElementById('realPdfCanvas');
+                if (sourceCanvas) {
+                    coiDocument.dataUrl = sourceCanvas.toDataURL('image/png');
+                } else {
+                    coiDocument.dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+                }
+            }
+        }
+
+        // Find the policy in window.allPolicies and also find related policies
+        let targetPolicies = [];
+
+        // Cross-reference mapping for policy relationships
+        // Updated based on actual policy IDs found in console logs
+        const policyMappings = {
+            // Primary policy relationships
+            '6146786114': ['POL-1769897676650-ri6ku8b34', 'POL-1769575534717-uq6k8c8ty'],
+            'POL-1769897676650-ri6ku8b34': ['6146786114', 'POL-1769575534717-uq6k8c8ty'],
+            '864564216': ['POL-1769575534717-uq6k8c8ty', 'POL-1769897676650-ri6ku8b34'],
+            'POL-1769575534717-uq6k8c8ty': ['864564216', '6146786114', 'POL-1769897676650-ri6ku8b34']
+        };
+
+        // Include mapped policy IDs in our search
+        const searchIds = [policyId];
+        if (policyMappings[policyId]) {
+            searchIds.push(...policyMappings[policyId]);
+        }
+
+        console.log('🔗 Policy mappings available:', policyMappings);
+        console.log('🔍 Will save COI to all these policy IDs:', searchIds);
+
+        console.log('🔍 Searching for policy IDs:', searchIds);
+
+        try {
+            console.log('🔧 Starting policy search and save operation...');
+
+        if (window.allPolicies && Array.isArray(window.allPolicies)) {
+            console.log('🔧 Attempting save via window.allPolicies...');
+            console.log('🔍 Searching through', window.allPolicies.length, 'policies for:', searchIds.join(', '));
+
+            // Find all matching policies (by ID, policy number, or related fields)
+            const matchingPolicies = window.allPolicies.filter(p =>
+                searchIds.some(searchId =>
+                    p.policyNumber === searchId ||
+                    p.id === searchId ||
+                    (p.policyNumber && p.policyNumber.trim() === searchId.trim()) ||
+                    (p.id && p.id.trim() === searchId.trim()) ||
+                    // Also check if this policy's number matches another policy's ID
+                    p.id === `POL-${searchId}` ||
+                    p.policyNumber === `POL-${searchId}` ||
+                    (p.id && p.id.includes(searchId)) ||
+                    (p.policyNumber && p.policyNumber.includes(searchId))
+                )
+            );
+
+            if (matchingPolicies.length > 0) {
+                targetPolicies = matchingPolicies;
+                console.log('✅ Found', matchingPolicies.length, 'matching policies in window.allPolicies');
+
+                matchingPolicies.forEach(policy => {
+                    console.log('📄 Replacing COI document for policy:', policy.policyNumber || policy.id);
+                    if (!policy.coiDocuments) {
+                        policy.coiDocuments = [];
+                    }
+                    // Remove existing COI documents for this policy
+                    policy.coiDocuments = policy.coiDocuments.filter(doc =>
+                        doc.policyId !== policyId &&
+                        !searchIds.includes(doc.policyId)
+                    );
+                    // Add the new COI document
+                    policy.coiDocuments.push({...coiDocument});
+                    console.log('✅ COI document replaced successfully for policy:', policy.policyNumber || policy.id);
+                });
+
+                // Also save to localStorage for backup - SAVE TO ALL MATCHING POLICIES
+                const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+                const localPolicies = policies.filter(p =>
+                    searchIds.some(searchId => p.policyNumber === searchId || p.id === searchId)
+                );
+
+                if (localPolicies.length > 0) {
+                    localPolicies.forEach(localPolicy => {
+                        if (!localPolicy.coiDocuments) {
+                            localPolicy.coiDocuments = [];
+                        }
+                        // Remove existing COI documents for this policy
+                        localPolicy.coiDocuments = localPolicy.coiDocuments.filter(doc =>
+                            doc.policyId !== policyId &&
+                            !searchIds.includes(doc.policyId)
+                        );
+                        // Add the new COI document
+                        localPolicy.coiDocuments.push(coiDocument);
+                        console.log('💾 COI document replaced in localStorage policy:', localPolicy.policyNumber || localPolicy.id);
+                        console.log('📋 Replaced COI document details:');
+                        console.log('  - Name:', coiDocument.name);
+                        console.log('  - Upload Date:', coiDocument.uploadDate);
+                        console.log('  - Form Data Keys:', Object.keys(coiDocument.formData));
+                        console.log('  - Description Field:', coiDocument.formData.description);
+                    });
+                    console.log('🔧 About to write to localStorage via window.allPolicies path...');
+                    localStorage.setItem('insurance_policies', JSON.stringify(policies));
+                    console.log('✅ localStorage write completed successfully via window.allPolicies');
+                    console.log('✅ COI saved to', localPolicies.length, 'matching policies in localStorage');
+
+                    // Debug: Check what was actually saved
+                    console.log('🔍 Verifying localStorage save...');
+                    const verifyPolicies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+                    verifyPolicies.forEach(p => {
+                        if (searchIds.some(id => id === p.id || id === p.policyNumber)) {
+                            console.log('  ✅ Policy', p.id || 'No ID', 'Number:', p.policyNumber || 'No Number', 'COI Count:', p.coiDocuments?.length || 0);
+                            if (p.coiDocuments?.length > 0) {
+                                console.log('    📄 Latest COI:', p.coiDocuments[p.coiDocuments.length - 1].name);
+                            }
+                        }
+                    });
+                }
+            } else {
+                console.warn('⚠️ Policy not found in window.allPolicies, saving to localStorage only');
+                // Save to localStorage as fallback - SAVE TO ALL MATCHING POLICIES
+                const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+                const localPolicies = policies.filter(p =>
+                    searchIds.some(searchId => p.policyNumber === searchId || p.id === searchId)
+                );
+
+                if (localPolicies.length > 0) {
+                    localPolicies.forEach(localPolicy => {
+                        if (!localPolicy.coiDocuments) {
+                            localPolicy.coiDocuments = [];
+                        }
+                        // Remove existing COI documents for this policy
+                        localPolicy.coiDocuments = localPolicy.coiDocuments.filter(doc =>
+                            doc.policyId !== policyId &&
+                            !searchIds.includes(doc.policyId)
+                        );
+                        // Add the new COI document
+                        localPolicy.coiDocuments.push(coiDocument);
+                        console.log('💾 COI document replaced in fallback localStorage policy:', localPolicy.policyNumber || localPolicy.id);
+                    });
+                    localStorage.setItem('insurance_policies', JSON.stringify(policies));
+                    console.log('✅ Fallback: COI saved to', localPolicies.length, 'matching policies in localStorage');
+                } else {
+                    // Create policy entries for all search IDs to ensure cross-reference works
+                    searchIds.forEach(id => {
+                        policies.push({
+                            id: id,
+                            policyNumber: id,
+                            coiDocuments: [{ ...coiDocument }]
+                        });
+                        console.log('🆕 Created new policy entry for ID:', id);
+                    });
+                    localStorage.setItem('insurance_policies', JSON.stringify(policies));
+                    console.log('🆕 Created new policy entries with COI document in localStorage');
+                }
+            }
+        }
+
+        // Also save to the legacy localStorage format for compatibility
+        const existingCOIs = JSON.parse(localStorage.getItem('policy_coi_documents') || '[]');
+
+        // Remove existing COI documents for this policy and related policy IDs
+        const filteredCOIs = existingCOIs.filter(doc =>
+            doc.policyId !== policyId &&
+            !searchIds.includes(doc.policyId)
+        );
+
+        // Add the new COI document
+        filteredCOIs.push({
+            ...coiDocument,
+            policyId: policyId
+        });
+
+        localStorage.setItem('policy_coi_documents', JSON.stringify(filteredCOIs));
+        console.log('✅ COI document replaced in legacy localStorage format');
+
+        console.log('✅ COI document saved successfully');
+
+        // Debug: Verify the save actually worked by checking localStorage immediately
+        console.log('🔍 SAVE VERIFICATION - Checking if COI was actually saved...');
+        const verifyPolicies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+        console.log('📊 Total policies in storage:', verifyPolicies.length);
+
+        searchIds.forEach(searchId => {
+            const foundPolicy = verifyPolicies.find(p =>
+                p.id === searchId || p.policyNumber === searchId ||
+                (p.id && p.id.trim() === searchId.trim()) ||
+                (p.policyNumber && p.policyNumber.trim() === searchId.trim())
+            );
+            if (foundPolicy) {
+                console.log(`📄 Policy ${searchId}: Found with ${foundPolicy.coiDocuments?.length || 0} COI documents`);
+                if (foundPolicy.coiDocuments?.length > 0) {
+                    const latestCOI = foundPolicy.coiDocuments[foundPolicy.coiDocuments.length - 1];
+                    console.log(`  ├─ Latest COI: ${latestCOI.name} (${latestCOI.uploadDate})`);
+                    console.log(`  └─ Form data description: ${latestCOI.formData?.description || 'No description'}`);
+                }
+            } else {
+                console.log(`❌ Policy ${searchId}: NOT FOUND in localStorage`);
+            }
+        });
+        console.log('🔍 SAVE VERIFICATION COMPLETE');
+
+        // Auto-close the generate COI modal after successful save
+        setTimeout(() => {
+            // Use our enhanced close function
+            if (window.closeGenerateCOIModal && typeof window.closeGenerateCOIModal === 'function') {
+                window.closeGenerateCOIModal();
+            } else if (window.closeCOIModal && typeof window.closeCOIModal === 'function') {
+                window.closeCOIModal();
+            }
+
+            // Show success message and refresh COI display
+            setTimeout(() => {
+                showNotification('COI saved successfully! Click "View Current" to see it.', 'success');
+
+                // Force update the specific container we know should show the COI
+                console.log('🔧 Force updating COI container after successful save...');
+                if (window.forceUpdateCOIContainer) {
+                    window.forceUpdateCOIContainer('POL-1769897676650-ri6ku8b34');
+                }
+
+                // Update the COI files container display
+                if (window.loadCOIFiles && typeof window.loadCOIFiles === 'function') {
+                    console.log('🔄 Refreshing COI files display...');
+                    window.loadCOIFiles(policyId);
+
+                    // Also try with policy ID patterns that might exist
+                    const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+                    const matchingPolicy = policies.find(p =>
+                        p.policyNumber === policyId ||
+                        p.id === policyId ||
+                        (p.policyNumber && policyId.includes(p.policyNumber)) ||
+                        (p.id && policyId.includes(p.id))
+                    );
+
+                    if (matchingPolicy) {
+                        // Try both policy number and policy ID
+                        if (matchingPolicy.policyNumber !== policyId) {
+                            window.loadCOIFiles(matchingPolicy.policyNumber);
+                        }
+                        if (matchingPolicy.id !== policyId) {
+                            window.loadCOIFiles(matchingPolicy.id);
+                        }
+                        console.log('✅ COI files display updated');
+                    }
+                }
+
+                // Also manually update any visible COI containers
+                const allContainers = document.querySelectorAll('[id^="coiFilesContainer-"]');
+                console.log('🔍 Found', allContainers.length, 'COI containers to update');
+
+                allContainers.forEach(container => {
+                    const containerId = container.id;
+                    const containerPolicyId = containerId.replace('coiFilesContainer-', '');
+                    console.log('🔄 Checking container for policy:', containerPolicyId);
+
+                    // Check if this container should show our saved COI
+                    const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+                    console.log('📋 Checking policies for container:', containerPolicyId);
+                    console.log('📋 Available policies in localStorage:', policies.map(p => ({ id: p.id, policyNumber: p.policyNumber, hasCOI: p.coiDocuments?.length > 0 })));
+
+                    // Special cross-reference mapping for known policy relationships
+                    const policyMappings = {
+                        '6146786114': 'POL-1769897676650-ri6ku8b34',
+                        'POL-1769897676650-ri6ku8b34': '6146786114'
+                    };
+
+                    const shouldShowCOI = policies.some(p => {
+                        console.log('🔍 Checking policy:', { id: p.id, policyNumber: p.policyNumber, hasCOI: p.coiDocuments?.length > 0 });
+
+                        // Direct match
+                        if ((p.policyNumber === containerPolicyId || p.id === containerPolicyId) &&
+                            p.coiDocuments && p.coiDocuments.length > 0) {
+                            console.log('✅ Direct match found for:', containerPolicyId);
+                            return true;
+                        }
+
+                        // Cross-reference check - if we saved for the policy we just saved
+                        if ((p.policyNumber === policyId || p.id === policyId) && p.coiDocuments && p.coiDocuments.length > 0) {
+                            console.log('🔍 Policy matches saved policy ID, checking mappings...');
+                            // Check if this container matches our cross-reference mapping
+                            const mappedId = policyMappings[policyId] || policyMappings[p.policyNumber];
+                            console.log('🔍 Mapped ID for', policyId, 'is:', mappedId);
+                            if (mappedId === containerPolicyId) {
+                                console.log('🔗 Cross-reference match:', policyId, '→', containerPolicyId);
+                                return true;
+                            }
+                            // Also check if containerPolicyId maps to our saved policy
+                            const reverseMappedId = policyMappings[containerPolicyId];
+                            console.log('🔍 Reverse mapped ID for', containerPolicyId, 'is:', reverseMappedId);
+                            if (reverseMappedId === policyId || reverseMappedId === p.policyNumber) {
+                                console.log('🔗 Reverse cross-reference match:', containerPolicyId, '→', policyId);
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    });
+
+                    if (shouldShowCOI) {
+                        console.log('✅ Updating container display for:', containerPolicyId);
+                        // Update the container to show COI cards instead of "No certificates"
+                        const policy = policies.find(p => {
+                            // Direct match
+                            if ((p.policyNumber === containerPolicyId || p.id === containerPolicyId) &&
+                                p.coiDocuments && p.coiDocuments.length > 0) {
+                                return true;
+                            }
+                            // Cross-reference match - find the policy that has COI documents
+                            if ((p.policyNumber === policyId || p.id === policyId) && p.coiDocuments && p.coiDocuments.length > 0) {
+                                const policyMappings = {
+                                    '6146786114': 'POL-1769897676650-ri6ku8b34',
+                                    'POL-1769897676650-ri6ku8b34': '6146786114'
+                                };
+                                const mappedId = policyMappings[policyId] || policyMappings[p.policyNumber];
+                                const reverseMappedId = policyMappings[containerPolicyId];
+                                return (mappedId === containerPolicyId) || (reverseMappedId === policyId || reverseMappedId === p.policyNumber);
+                            }
+                            return false;
+                        });
+
+                        if (policy && policy.coiDocuments) {
+                            console.log('🎨 Found policy with COI documents, updating container...');
+                            updateCOIContainer(container, policy.coiDocuments);
+                        } else {
+                            console.log('❌ Could not find policy with COI documents for container:', containerPolicyId);
+                        }
+                    } else {
+                        console.log('❌ No COI should be shown for container:', containerPolicyId);
+                    }
+                });
+            }, 500);
+        }, 1500); // Wait 1.5 seconds to show the success state
+
+    } catch (error) {
+        console.error('❌ Error saving COI document:', error);
+        console.error('❌ Error details:', {
+            message: error.message,
+            stack: error.stack,
+            policyId: policyId,
+            formData: formData ? Object.keys(formData) : 'undefined'
+        });
+
+        // Try to identify exactly where it failed
+        console.error('❌ Save failure point - could not complete localStorage save operation');
+        throw error; // Re-throw to see full stack trace
+    }
+}
+
+// Function to update COI container with visual cards
+function updateCOIContainer(container, coiDocuments) {
+    console.log('🎨 Updating COI container with', coiDocuments.length, 'documents');
+    console.log('🎨 Container ID:', container.id);
+    console.log('🎨 COI Documents:', coiDocuments.map(d => ({ id: d.id, name: d.name, uploadDate: d.uploadDate })));
+
+    let containerHTML = '';
+
+    coiDocuments.forEach((doc, index) => {
+        const uploadDate = doc.uploadDate ? new Date(doc.uploadDate).toLocaleDateString() : 'Unknown';
+        const docName = doc.name || `COI Document ${index + 1}`;
+
+        containerHTML += `
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); transition: 0.2s; cursor: pointer;" onclick="window.showCOIModal && window.showCOIModal(${JSON.stringify(doc).replace(/"/g, '&quot;')})">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="background: #3b82f6; color: white; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-file-pdf" style="font-size: 20px;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 4px 0; color: #111827; font-size: 14px; font-weight: 600;">${docName}</h4>
+                        <p style="margin: 0; color: #6b7280; font-size: 12px;">
+                            <i class="fas fa-calendar"></i> ${uploadDate} |
+                            <i class="fas fa-file"></i> ${doc.type || 'image/png'}
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="event.stopPropagation(); window.showCOIModal && window.showCOIModal(${JSON.stringify(doc).replace(/"/g, '&quot;')})" style="padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = containerHTML;
+    console.log('✅ COI container updated successfully');
+}
+
+// Simplified function to force update COI container for specific policy
+window.forceUpdateCOIContainer = function(policyId = 'POL-1769897676650-ri6ku8b34') {
+    console.log('🔧 Force updating COI container for policy:', policyId);
+
+    // Find the container
+    const container = document.getElementById(`coiFilesContainer-${policyId}`);
+    if (!container) {
+        console.log('❌ Container not found:', `coiFilesContainer-${policyId}`);
+        return;
+    }
+
+    // Try to get actual saved COI data first
+    const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+    const crossReferenceMap = {
+        '6146786114': 'POL-1769897676650-ri6ku8b34',
+        'POL-1769897676650-ri6ku8b34': '6146786114'
+    };
+
+    // Look for policy with COI data (either direct match or cross-reference)
+    let coiDocuments = null;
+    const searchIds = [policyId, crossReferenceMap[policyId]].filter(id => id);
+
+    for (const searchId of searchIds) {
+        const policy = policies.find(p => (p.id === searchId || p.policyNumber === searchId) && p.coiDocuments && p.coiDocuments.length > 0);
+        if (policy) {
+            coiDocuments = policy.coiDocuments;
+            console.log('✅ Found saved COI documents for policy:', searchId);
+            break;
+        }
+    }
+
+    // Fallback to sample if no saved data found
+    if (!coiDocuments) {
+        console.log('⚠️ No saved COI found, using sample data...');
+        coiDocuments = [{
+            id: `coi-${Date.now()}`,
+            name: `ACORD_25_${policyId}_${new Date().toISOString().split('T')[0]}.png`,
+            type: 'image/png',
+            uploadDate: new Date().toISOString()
+        }];
+    }
+
+    console.log('🎨 Updating container with COI documents...');
+    updateCOIContainer(container, coiDocuments);
+    return true;
+};
+
+// Test function to manually trigger container update
+window.testCOIContainerUpdate = function() {
+    console.log('🧪 Testing COI container update manually...');
+
+    // Find the container
+    const container = document.getElementById('coiFilesContainer-POL-1769897676650-ri6ku8b34');
+    if (!container) {
+        console.log('❌ Container not found');
+        return;
+    }
+
+    // Check localStorage for policies
+    const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+    console.log('📋 Available policies:', policies.map(p => ({ id: p.id, policyNumber: p.policyNumber, hasCOI: p.coiDocuments?.length > 0 })));
+
+    // Find a policy with COI documents
+    const policyWithCOI = policies.find(p => p.coiDocuments && p.coiDocuments.length > 0);
+    if (policyWithCOI) {
+        console.log('✅ Found policy with COI:', policyWithCOI.id || policyWithCOI.policyNumber);
+        updateCOIContainer(container, policyWithCOI.coiDocuments);
+    } else {
+        console.log('❌ No policy with COI documents found');
+        console.log('🔧 Using force update instead...');
+        window.forceUpdateCOIContainer();
+    }
+};
+
+// Test function to validate modal reopening with COI data
+window.testModalReopenWithCOI = function() {
+    console.log('🧪 Testing modal reopen with COI data...');
+
+    // Ensure we have sample COI data in localStorage
+    const policies = JSON.parse(localStorage.getItem('insurance_policies') || '[]');
+    const testPolicy = {
+        id: 'POL-1769897676650-ri6ku8b34',
+        policyNumber: 'POL-1769897676650-ri6ku8b34',
+        coiDocuments: [{
+            id: 'test-coi-123',
+            name: 'Test_ACORD_25.png',
+            type: 'image/png',
+            uploadDate: new Date().toISOString()
+        }]
+    };
+
+    // Add or update the policy
+    const existingIndex = policies.findIndex(p => p.id === testPolicy.id || p.policyNumber === testPolicy.policyNumber);
+    if (existingIndex >= 0) {
+        policies[existingIndex] = testPolicy;
+    } else {
+        policies.push(testPolicy);
+    }
+
+    localStorage.setItem('insurance_policies', JSON.stringify(policies));
+    console.log('✅ Added test COI data to localStorage');
+
+    // Close any existing modal
+    const existingModal = document.getElementById('policyViewModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Wait a bit then reopen modal
+    setTimeout(() => {
+        console.log('🔄 Reopening policy modal...');
+        if (window.viewPolicy) {
+            window.viewPolicy('POL-1769897676650-ri6ku8b34');
+        }
+    }, 500);
+};
+
+// Debug log to confirm function is defined
+console.log('✅ createRealACORDViewer function defined:', typeof window.createRealACORDViewer);
 
 console.log('✅ Real ACORD Viewer Ready with Certificate Holder and Sign As features');

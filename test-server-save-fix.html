@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚛 Test Server Save Fix - DOT Data Persistence</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .success { color: #16a34a; font-weight: bold; }
+        .error { color: #dc2626; font-weight: bold; }
+        .info { color: #2563eb; font-weight: bold; }
+        .step { background: #f8f9fa; padding: 15px; border-radius: 6px; margin: 10px 0; border-left: 4px solid #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 DOT Data Server Save Fix Test</h1>
+
+        <div class="step">
+            <h3>🔧 Fix Applied:</h3>
+            <ul>
+                <li>✅ Auto-hook now saves DOT data to server using <code>updateLeadField()</code></li>
+                <li>✅ Updated to version 6 to force browser refresh</li>
+                <li>✅ Server sync preserves DOT data during profile loads</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>🧪 Test Steps:</h3>
+            <ol>
+                <li class="info">Go to lead 150420 (GOLDS CUSTOM SERVICE MARIA MICEK)</li>
+                <li class="info">Click the "DOT Lookup" button in Company Information section</li>
+                <li class="info">Watch console for new server save messages:</li>
+                <ul>
+                    <li><code>💾 AUTO DOT: Saving DOT data to server for lead 150420</code></li>
+                    <li><code>💾 AUTO DOT: Saved state to server: IN</code></li>
+                    <li><code>💾 AUTO DOT: Saved yearsInBusiness to server: 5-10 years</code></li>
+                    <li><code>💾 AUTO DOT: Saved commodityHauled to server: General Freight</code></li>
+                </ul>
+                <li class="success">Fields should populate with green backgrounds</li>
+                <li class="success">Close profile and reopen - data should persist!</li>
+                <li class="success">Refresh page - data should still be there!</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>🎯 Expected Result:</h3>
+            <p class="success">DOT data now saves to server and persists permanently!</p>
+            <p>The fields should:</p>
+            <ul>
+                <li>✅ Fill immediately with data</li>
+                <li>✅ Show green backgrounds</li>
+                <li>✅ Persist after profile refresh</li>
+                <li>✅ Persist after page refresh</li>
+                <li>✅ Persist after closing and reopening lead</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Root Cause Fixed:</h3>
+            <p><strong>Problem:</strong> Manual DOT lookup only saved to localStorage, not server</p>
+            <p><strong>Solution:</strong> Added <code>updateLeadField()</code> calls to save DOT data to server immediately after localStorage save</p>
+            <p><strong>Result:</strong> Data persists permanently because server has the latest data</p>
+        </div>
+
+        <button onclick="window.open('/#leads', '_blank')" style="background: #16a34a; color: white; padding: 15px 30px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold;">
+            🚛 Test DOT Lookup Now
+        </button>
+    </div>
+</body>
+</html>

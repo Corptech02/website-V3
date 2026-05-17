@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Real-time DOT Lookup</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 8px 4px; font-size: 16px; }
+        .button:hover { background: #0056b3; }
+        .button.success { background: #28a745; }
+        .button.warning { background: #ffc107; color: #212529; }
+        .log { margin: 20px 0; padding: 20px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 4px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 14px; }
+        .log-entry { margin: 5px 0; padding: 8px; border-left: 3px solid #333; background: rgba(0,0,0,0.05); }
+        .log-success { border-left-color: #28a745; }
+        .log-error { border-left-color: #dc3545; }
+        .log-warning { border-left-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 Real-time DOT Lookup Test</h1>
+        <p>This page tests the automatic DOT lookup that triggers immediately when leads are created or updated.</p>
+
+        <h2>Create Test Lead</h2>
+        <form id="testLeadForm">
+            <div class="form-group">
+                <label for="companyName">Company Name:</label>
+                <input type="text" id="companyName" name="name" value="Test Trucking Company" required>
+            </div>
+
+            <div class="form-group">
+                <label for="dotNumber">DOT Number:</label>
+                <input type="text" id="dotNumber" name="dotNumber" placeholder="e.g., 3833739" required>
+            </div>
+
+            <div class="form-group">
+                <label for="contact">Contact Name:</label>
+                <input type="text" id="contact" name="contact" value="Test Contact">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone:</label>
+                <input type="text" id="phone" name="phone" value="555-123-4567">
+            </div>
+
+            <button type="submit" class="button">Create Lead (Should Trigger DOT Lookup)</button>
+        </form>
+
+        <h2>Quick Test Buttons</h2>
+        <button class="button success" onclick="createTestLead('3833739', 'GOLDS CUSTOM SERVICES INC')">
+            🎯 Create Lead with DOT 3833739
+        </button>
+        <button class="button success" onclick="createTestLead('3342195', 'SKUR TRANSPORT LLC')">
+            🎯 Create Lead with DOT 3342195
+        </button>
+        <button class="button warning" onclick="simulateLeadUpdate()">
+            ✏️ Update Existing Lead with DOT
+        </button>
+        <button class="button" onclick="checkCurrentLeads()">
+            📋 Show Current Leads
+        </button>
+
+        <div id="log" class="log">
+            <div class="log-entry">🔄 Ready to test real-time DOT lookup. Create a lead to see it in action.</div>
+        </div>
+    </div>
+
+    <!-- Load all required scripts -->
+    <script src="js/vicidial-import-listener.js"></script>
+    <script src="js/vicidial-dot-lookup-integration.js?v=2"></script>
+    <script src="js/auto-dot-lookup-hook.js?v=1"></script>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> ${message}`;
+
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Form submission handler
+        document.getElementById('testLeadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const leadData = {
+                id: 'test-' + Date.now(),
+                name: formData.get('name'),
+                dotNumber: formData.get('dotNumber'),
+                contact: formData.get('contact'),
+                phone: formData.get('phone'),
+                createdAt: new Date().toISOString(),
+                stage: 'New Lead'
+            };
+
+            createLead(leadData);
+        });
+
+        function createLead(leadData) {
+            log(`🔨 Creating lead: ${leadData.name} with DOT ${leadData.dotNumber}`, 'info');
+
+            try {
+                // Get existing leads
+                const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+
+                // Add new lead
+                leads.push(leadData);
+
+                // Save to localStorage (this should trigger the auto hook)
+                localStorage.setItem('insurance_leads', JSON.stringify(leads));
+
+                log(`✅ Lead created successfully! Auto DOT lookup should trigger...`, 'success');
+
+                // Clear form
+                document.getElementById('testLeadForm').reset();
+
+            } catch (error) {
+                log(`❌ Error creating lead: ${error.message}`, 'error');
+            }
+        }
+
+        function createTestLead(dotNumber, companyName) {
+            const leadData = {
+                id: 'test-' + Date.now(),
+                name: companyName,
+                dotNumber: dotNumber,
+                contact: 'Test Contact',
+                phone: '555-123-4567',
+                createdAt: new Date().toISOString(),
+                stage: 'New Lead'
+            };
+
+            createLead(leadData);
+        }
+
+        function simulateLeadUpdate() {
+            try {
+                const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+
+                if (leads.length === 0) {
+                    log('❌ No leads found to update', 'error');
+                    return;
+                }
+
+                // Update the last lead with a DOT number
+                const lastLead = leads[leads.length - 1];
+                lastLead.dotNumber = '3833739';
+                lastLead.lastUpdated = new Date().toISOString();
+
+                log(`✏️ Updating lead ${lastLead.name} with DOT 3833739`, 'info');
+
+                // Save updated leads (should trigger auto hook)
+                localStorage.setItem('insurance_leads', JSON.stringify(leads));
+
+                log('✅ Lead updated! Auto DOT lookup should trigger...', 'success');
+
+            } catch (error) {
+                log(`❌ Error updating lead: ${error.message}`, 'error');
+            }
+        }
+
+        function checkCurrentLeads() {
+            try {
+                const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                log(`📋 Current leads count: ${leads.length}`, 'info');
+
+                const leadsWithDOT = leads.filter(lead => lead.dotNumber && lead.dotNumber.trim() !== '');
+                log(`🚛 Leads with DOT numbers: ${leadsWithDOT.length}`, 'info');
+
+                leadsWithDOT.slice(-3).forEach(lead => {
+                    const hasData = lead.yearsInBusiness || lead.state || lead.commodityHauled;
+                    log(`  ${hasData ? '✅' : '⚠️'} ${lead.name} (DOT: ${lead.dotNumber}) - ${hasData ? 'Has carrier data' : 'Missing carrier data'}`, hasData ? 'success' : 'warning');
+                });
+
+            } catch (error) {
+                log(`❌ Error reading leads: ${error.message}`, 'error');
+            }
+        }
+
+        // Override console.log to capture DOT lookup messages
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+
+            const message = args.join(' ');
+            if (message.includes('AUTO DOT:') || message.includes('DOT LOOKUP:')) {
+                if (message.includes('✅') || message.includes('Successfully')) {
+                    log(message, 'success');
+                } else if (message.includes('❌') || message.includes('Error')) {
+                    log(message, 'error');
+                } else if (message.includes('⚠️') || message.includes('Warning')) {
+                    log(message, 'warning');
+                } else {
+                    log(message, 'info');
+                }
+            }
+        };
+
+        // Initial status check
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('🔍 Checking if auto DOT lookup hook is installed...', 'info');
+
+                // Check if localStorage.setItem has been overridden
+                const setItemStr = localStorage.setItem.toString();
+                if (setItemStr.includes('insurance_leads')) {
+                    log('✅ Auto DOT lookup hook is active!', 'success');
+                } else {
+                    log('❌ Auto DOT lookup hook not detected', 'error');
+                }
+
+                // Check if DOT lookup functions are available
+                if (typeof window.performDOTLookupForLead === 'function') {
+                    log('✅ performDOTLookupForLead function available', 'success');
+                } else {
+                    log('❌ performDOTLookupForLead function missing', 'error');
+                }
+
+                checkCurrentLeads();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

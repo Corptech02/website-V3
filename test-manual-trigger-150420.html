@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manual DOT Lookup Test for Lead 150420</title>
+</head>
+<body>
+    <h1>🚛 Manual DOT Lookup for Lead 150420</h1>
+    <p>GOLDS CUSTOM SERVICE MARIA MICEK - DOT: 3833739</p>
+
+    <button onclick="testDOTLookup()" style="padding: 15px 30px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+        🎯 Trigger DOT Lookup Now
+    </button>
+
+    <div id="results" style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 4px;">
+        <h3>Results:</h3>
+        <div id="output"></div>
+    </div>
+
+    <!-- Load integration scripts -->
+    <script src="js/vicidial-import-listener.js"></script>
+    <script src="js/vicidial-dot-lookup-integration.js?v=2"></script>
+    <script src="js/auto-dot-lookup-hook.js?v=1"></script>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#333',
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107'
+            };
+
+            output.innerHTML += `
+                <div style="margin: 5px 0; padding: 8px; border-left: 3px solid ${colors[type]}; background: rgba(0,0,0,0.05);">
+                    <span style="color: #666; font-size: 0.8em;">[${timestamp}]</span>
+                    <span style="color: ${colors[type]};">${message}</span>
+                </div>
+            `;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        async function testDOTLookup() {
+            log('🚛 Testing manual DOT lookup for lead 150420 with DOT 3833739...', 'info');
+
+            // Check if functions are available
+            if (typeof window.performDOTLookupForLead === 'function') {
+                log('✅ performDOTLookupForLead function is available', 'success');
+
+                try {
+                    log('🔍 Calling performDOTLookupForLead(150420, 3833739)...', 'info');
+
+                    const result = await window.performDOTLookupForLead('150420', '3833739');
+
+                    if (result) {
+                        log('✅ DOT lookup completed successfully!', 'success');
+                        log('📋 Result data received:', 'success');
+                        log(JSON.stringify(result, null, 2), 'info');
+
+                        // Now check if the lead data was updated in localStorage
+                        setTimeout(() => {
+                            const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                            const updatedLead = leads.find(lead => lead.id == '150420');
+
+                            if (updatedLead) {
+                                log('🔍 Checking updated lead data in localStorage...', 'info');
+                                log(`Company: ${updatedLead.name}`, 'info');
+                                log(`State: ${updatedLead.state || 'NOT SET'}`, updatedLead.state ? 'success' : 'warning');
+                                log(`Years in Business: ${updatedLead.yearsInBusiness || 'NOT SET'}`, updatedLead.yearsInBusiness ? 'success' : 'warning');
+                                log(`Commodity: ${updatedLead.commodityHauled || 'NOT SET'}`, updatedLead.commodityHauled ? 'success' : 'warning');
+                            } else {
+                                log('❌ Lead 150420 not found in localStorage', 'error');
+                            }
+                        }, 2000);
+
+                    } else {
+                        log('⚠️ DOT lookup returned null result', 'warning');
+                    }
+
+                } catch (error) {
+                    log(`❌ DOT lookup error: ${error.message}`, 'error');
+                    console.error('Full error:', error);
+                }
+
+            } else {
+                log('❌ performDOTLookupForLead function not available', 'error');
+
+                // List available functions
+                const dotFunctions = [];
+                for (let prop in window) {
+                    if (prop.toLowerCase().includes('dot') && typeof window[prop] === 'function') {
+                        dotFunctions.push(prop);
+                    }
+                }
+
+                if (dotFunctions.length > 0) {
+                    log(`Available DOT functions: ${dotFunctions.join(', ')}`, 'info');
+                } else {
+                    log('No DOT-related functions found in window', 'warning');
+                }
+            }
+        }
+
+        // Override console.log to capture messages
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+
+            const message = args.join(' ');
+            if (message.includes('DOT LOOKUP') || message.includes('AUTO DOT') || message.includes('🚛') || message.includes('🔍')) {
+                if (message.includes('✅') || message.includes('Successfully')) {
+                    log(message, 'success');
+                } else if (message.includes('❌') || message.includes('Error')) {
+                    log(message, 'error');
+                } else if (message.includes('⚠️') || message.includes('Warning')) {
+                    log(message, 'warning');
+                } else {
+                    log(message, 'info');
+                }
+            }
+        };
+
+        // Check status on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('🔍 Checking integration status...', 'info');
+
+                // Check if DOT lookup function exists
+                if (typeof window.performDOTLookupForLead === 'function') {
+                    log('✅ performDOTLookupForLead function loaded', 'success');
+                } else {
+                    log('❌ performDOTLookupForLead function missing', 'error');
+                }
+
+                // Check if auto hook is installed
+                const setItemStr = localStorage.setItem.toString();
+                if (setItemStr.includes('insurance_leads')) {
+                    log('✅ Auto DOT lookup hook is installed', 'success');
+                } else {
+                    log('❌ Auto DOT lookup hook not detected', 'error');
+                }
+
+                // Check current lead data
+                const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                const targetLead = leads.find(lead => lead.id == '150420');
+
+                if (targetLead) {
+                    log('✅ Found lead 150420 in localStorage', 'success');
+                    log(`DOT Number: ${targetLead.dotNumber}`, 'info');
+                    log(`State: ${targetLead.state || 'MISSING'}`, targetLead.state ? 'success' : 'warning');
+                    log(`Years in Business: ${targetLead.yearsInBusiness || 'MISSING'}`, targetLead.yearsInBusiness ? 'success' : 'warning');
+                } else {
+                    log('❌ Lead 150420 not found in localStorage', 'error');
+                }
+
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

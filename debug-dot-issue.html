@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug DOT Lookup Issue</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 8px; font-size: 16px; }
+        .button:hover { background: #0056b3; }
+        .button.success { background: #28a745; }
+        .button.warning { background: #ffc107; color: #212529; }
+        .button.danger { background: #dc3545; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 8px; }
+        .log { font-family: monospace; font-size: 14px; max-height: 300px; overflow-y: auto; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug DOT Lookup Issue</h1>
+        <p>This page will help diagnose whether the problem is with DOT lookup or data display</p>
+
+        <div class="section">
+            <h2>Step 1: Check API Connection</h2>
+            <button class="button" onclick="testAPI()">🌐 Test DOT API</button>
+            <div id="apiResults" class="log"></div>
+        </div>
+
+        <div class="section">
+            <h2>Step 2: Check localStorage Data</h2>
+            <button class="button" onclick="checkCurrentData()">📋 Check Lead 150420 Data</button>
+            <div id="dataResults" class="log"></div>
+        </div>
+
+        <div class="section">
+            <h2>Step 3: Check Auto-Hook Status</h2>
+            <button class="button" onclick="checkAutoHook()">🔧 Check DOT Auto-Hook</button>
+            <div id="hookResults" class="log"></div>
+        </div>
+
+        <div class="section">
+            <h2>Step 4: Force DOT Lookup</h2>
+            <button class="button success" onclick="forceDOTLookup()">🎯 Force DOT Lookup</button>
+            <div id="forceResults" class="log"></div>
+        </div>
+
+        <div class="section">
+            <h2>Step 5: Manual Data Population</h2>
+            <button class="button warning" onclick="manuallyPopulateData()">✏️ Manually Add DOT Data</button>
+            <div id="manualResults" class="log"></div>
+        </div>
+
+        <div class="section">
+            <h2>Step 6: Clear Browser Cache</h2>
+            <button class="button danger" onclick="clearCacheAndReload()">🗑️ Clear Cache & Reload</button>
+            <p><small>This will clear browser cache and reload the page</small></p>
+        </div>
+    </div>
+
+    <!-- Load the DOT lookup hook -->
+    <script src="js/auto-dot-lookup-hook.js?v=4"></script>
+
+    <script>
+        function log(containerId, message, className = '') {
+            const container = document.getElementById(containerId);
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = className;
+            div.innerHTML = `[${timestamp}] ${message}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function testAPI() {
+            log('apiResults', '🔍 Testing DOT API for DOT 3833739...', '');
+
+            try {
+                const response = await fetch('/api/test-db/3833739');
+
+                if (!response.ok) {
+                    log('apiResults', `❌ HTTP Error: ${response.status} ${response.statusText}`, 'error');
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.carrier) {
+                    log('apiResults', '✅ API is working!', 'success');
+                    log('apiResults', `Company: ${data.carrier.LEGAL_NAME}`, '');
+                    log('apiResults', `State: ${data.carrier.PHY_STATE}`, '');
+                    log('apiResults', `Phone: ${data.carrier.PHONE}`, '');
+                    log('apiResults', `DOT: ${data.carrier.DOT_NUMBER}`, '');
+
+                    // Calculate years
+                    const dotNum = parseInt(data.carrier.DOT_NUMBER);
+                    let years = '';
+                    if (dotNum < 1000000) years = '25+ years';
+                    else if (dotNum < 2000000) years = '15-20 years';
+                    else if (dotNum < 3000000) years = '10-15 years';
+                    else years = '5-10 years';
+
+                    log('apiResults', `Calculated Years: ${years}`, '');
+                    log('apiResults', '📊 API is providing correct data', 'success');
+                } else {
+                    log('apiResults', '❌ API returned no data', 'error');
+                    log('apiResults', `Response: ${JSON.stringify(data)}`, '');
+                }
+            } catch (error) {
+                log('apiResults', `❌ API Error: ${error.message}`, 'error');
+            }
+        }
+
+        function checkCurrentData() {
+            log('dataResults', '📋 Checking current localStorage data...', '');
+
+            try {
+                const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                const lead150420 = leads.find(lead => lead.id === '150420');
+
+                if (lead150420) {
+                    log('dataResults', '✅ Found lead 150420', 'success');
+                    log('dataResults', `Name: ${lead150420.name}`, '');
+                    log('dataResults', `DOT: ${lead150420.dotNumber}`, '');
+
+                    // Check DOT fields
+                    const hasState = lead150420.state && lead150420.state.trim() !== '';
+                    const hasYears = lead150420.yearsInBusiness && lead150420.yearsInBusiness.trim() !== '';
+                    const hasCommodity = lead150420.commodityHauled && lead150420.commodityHauled.trim() !== '';
+
+                    log('dataResults', `State: "${lead150420.state || 'EMPTY'}"`, hasState ? 'success' : 'error');
+                    log('dataResults', `Years in Business: "${lead150420.yearsInBusiness || 'EMPTY'}"`, hasYears ? 'success' : 'error');
+                    log('dataResults', `Commodity Hauled: "${lead150420.commodityHauled || 'EMPTY'}"`, hasCommodity ? 'success' : 'error');
+
+                    if (!hasState && !hasYears && !hasCommodity) {
+                        log('dataResults', '❌ PROBLEM: DOT data is missing from localStorage', 'error');
+                        log('dataResults', '💡 This suggests the DOT lookup is not running or not saving data', 'warning');
+                    } else if (hasState && hasYears && hasCommodity) {
+                        log('dataResults', '🎉 All DOT data is present in localStorage', 'success');
+                        log('dataResults', '💡 The issue might be with profile display refresh', 'warning');
+                    } else {
+                        log('dataResults', '⚠️ Some DOT data is present, some missing', 'warning');
+                    }
+
+                } else {
+                    log('dataResults', '❌ Lead 150420 not found in localStorage', 'error');
+                }
+
+                log('dataResults', `Total leads in localStorage: ${leads.length}`, '');
+
+            } catch (error) {
+                log('dataResults', `❌ Error reading localStorage: ${error.message}`, 'error');
+            }
+        }
+
+        function checkAutoHook() {
+            log('hookResults', '🔧 Checking DOT auto-hook status...', '');
+
+            // Check if auto-hook is loaded
+            if (window.debugDOTLookupHook) {
+                log('hookResults', '✅ Auto-hook script is loaded', 'success');
+
+                const status = window.debugDOTLookupHook();
+                log('hookResults', `Total leads: ${status.totalLeads}`, '');
+                log('hookResults', `Leads with DOT: ${status.leadsWithDOT}`, '');
+                log('hookResults', `Cached leads: ${status.cachedLeads}`, '');
+                log('hookResults', `localStorage hooked: ${status.isHooked}`, status.isHooked ? 'success' : 'error');
+
+            } else {
+                log('hookResults', '❌ Auto-hook script not loaded', 'error');
+            }
+
+            // Check if manual trigger is available
+            if (window.manualDOTLookupTrigger) {
+                log('hookResults', '✅ Manual DOT lookup trigger available', 'success');
+            } else {
+                log('hookResults', '❌ Manual DOT lookup trigger not available', 'error');
+            }
+
+            // Check localStorage hook
+            const setItemStr = localStorage.setItem.toString();
+            if (setItemStr.includes('insurance_leads')) {
+                log('hookResults', '✅ localStorage.setItem is hooked', 'success');
+            } else {
+                log('hookResults', '❌ localStorage.setItem is NOT hooked', 'error');
+                log('hookResults', '💡 Auto-hook may not be intercepting lead updates', 'warning');
+            }
+        }
+
+        async function forceDOTLookup() {
+            log('forceResults', '🎯 Forcing DOT lookup for lead 150420...', '');
+
+            if (window.manualDOTLookupTrigger) {
+                try {
+                    log('forceResults', '📞 Calling manualDOTLookupTrigger(150420, 3833739)', '');
+
+                    const result = await window.manualDOTLookupTrigger('150420', '3833739');
+
+                    log('forceResults', '✅ DOT lookup trigger completed', 'success');
+
+                    // Wait and check results
+                    setTimeout(() => {
+                        const leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                        const updatedLead = leads.find(lead => lead.id === '150420');
+
+                        if (updatedLead) {
+                            log('forceResults', '📊 Checking results:', '');
+                            log('forceResults', `State: "${updatedLead.state || 'STILL EMPTY'}"`, updatedLead.state ? 'success' : 'error');
+                            log('forceResults', `Years: "${updatedLead.yearsInBusiness || 'STILL EMPTY'}"`, updatedLead.yearsInBusiness ? 'success' : 'error');
+                            log('forceResults', `Commodity: "${updatedLead.commodityHauled || 'STILL EMPTY'}"`, updatedLead.commodityHauled ? 'success' : 'error');
+                        }
+                    }, 3000);
+
+                } catch (error) {
+                    log('forceResults', `❌ Force lookup error: ${error.message}`, 'error');
+                }
+            } else {
+                log('forceResults', '❌ Manual DOT lookup trigger not available', 'error');
+                log('forceResults', '💡 Try reloading the page to load the auto-hook script', 'warning');
+            }
+        }
+
+        function manuallyPopulateData() {
+            log('manualResults', '✏️ Manually populating DOT data...', '');
+
+            try {
+                let leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                const leadIndex = leads.findIndex(lead => lead.id === '150420');
+
+                if (leadIndex !== -1) {
+                    // Manually add the DOT data
+                    leads[leadIndex].state = 'IN';
+                    leads[leadIndex].yearsInBusiness = '5-10 years';
+                    leads[leadIndex].commodityHauled = 'General Freight';
+
+                    localStorage.setItem('insurance_leads', JSON.stringify(leads));
+
+                    log('manualResults', '✅ Manually added DOT data to localStorage', 'success');
+                    log('manualResults', 'State: IN', 'success');
+                    log('manualResults', 'Years in Business: 5-10 years', 'success');
+                    log('manualResults', 'Commodity Hauled: General Freight', 'success');
+                    log('manualResults', '💡 Now try opening the lead profile to see if green backgrounds appear', 'warning');
+
+                } else {
+                    log('manualResults', '❌ Lead 150420 not found', 'error');
+                }
+            } catch (error) {
+                log('manualResults', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function clearCacheAndReload() {
+            // Clear all caches
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    names.forEach(function(name) {
+                        caches.delete(name);
+                    });
+                });
+            }
+
+            // Clear localStorage debug info
+            console.log('🗑️ Clearing browser cache and reloading...');
+
+            // Force reload with cache bypass
+            window.location.reload(true);
+        }
+
+        // Auto-run diagnostics on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('hookResults', '🚀 Auto-running diagnostics...', '');
+                checkCurrentData();
+                checkAutoHook();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

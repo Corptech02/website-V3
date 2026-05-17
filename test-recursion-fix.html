@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Recursion Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 8px; }
+        .button.success { background: #28a745; }
+        .log { font-family: monospace; font-size: 13px; background: #f8f9fa; padding: 15px; border-radius: 4px; height: 500px; overflow-y: auto; border: 1px solid #dee2e6; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .info { color: #0066cc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Recursion Fix</h1>
+        <p>This tests the fixed auto-hook that should prevent recursion loops and properly populate DOT data.</p>
+
+        <button class="button success" onclick="testRecursionFix()">🎯 Test Fixed DOT Lookup</button>
+        <button class="button" onclick="clearLog()">🗑️ Clear Log</button>
+
+        <div id="log" class="log">Ready to test recursion fix...\n</div>
+    </div>
+
+    <!-- Load the FIXED auto-hook (version 4) -->
+    <script src="js/auto-dot-lookup-hook.js?v=4"></script>
+
+    <script>
+        function log(message, className = '') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const span = document.createElement('span');
+            span.className = className;
+            span.innerHTML = `[${timestamp}] ${message}\\n`;
+            logDiv.appendChild(span);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = 'Log cleared...\\n';
+        }
+
+        // Monitor console logs
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            const message = args.join(' ');
+            if (message.includes('BUILT-IN DOT') || message.includes('AUTO DOT')) {
+                log('🔍 ' + message, 'info');
+            }
+        };
+
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            const message = args.join(' ');
+            log('❌ ERROR: ' + message, 'error');
+        };
+
+        async function testRecursionFix() {
+            log('🚀 Testing recursion-fixed DOT lookup...', 'info');
+
+            // Clear any existing lead
+            log('🗑️ Clearing any existing test lead...', '');
+            let leads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+            leads = leads.filter(lead => lead.id !== '150420');
+            localStorage.setItem('insurance_leads', JSON.stringify(leads));
+
+            // Create test lead (this should trigger auto-hook)
+            const testLead = {
+                id: '150420',
+                name: 'GOLDS CUSTOM SERVICE MARIA MICEK',
+                contact: 'GOLDS CUSTOM SERVICE',
+                phone: '(815) 588-3712',
+                email: 'GOLDSCUSTOMSERVICES@GMAIL.COM',
+                dotNumber: '3833739',
+                stage: 'New',
+                createdAt: new Date().toISOString(),
+                notes: 'Test lead for recursion fix'
+            };
+
+            log('📝 Creating test lead with DOT 3833739...', '');
+
+            // Add the lead (this should trigger the auto-hook without recursion)
+            leads.push(testLead);
+
+            log('💾 Saving to localStorage (should trigger auto-hook)...', '');
+            localStorage.setItem('insurance_leads', JSON.stringify(leads));
+
+            log('⏳ Waiting 5 seconds for DOT lookup to complete...', 'info');
+
+            // Check results after delay
+            setTimeout(() => {
+                log('🔍 Checking results...', '');
+
+                const updatedLeads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                const updatedLead = updatedLeads.find(lead => lead.id === '150420');
+
+                if (updatedLead) {
+                    log('📊 Lead found, checking DOT data:', '');
+
+                    const hasState = updatedLead.state && updatedLead.state.trim() !== '';
+                    const hasYears = updatedLead.yearsInBusiness && updatedLead.yearsInBusiness.trim() !== '';
+                    const hasCommodity = updatedLead.commodityHauled && updatedLead.commodityHauled.trim() !== '';
+
+                    log(`   State: "${updatedLead.state || 'EMPTY'}"`, hasState ? 'success' : 'error');
+                    log(`   Years in Business: "${updatedLead.yearsInBusiness || 'EMPTY'}"`, hasYears ? 'success' : 'error');
+                    log(`   Commodity Hauled: "${updatedLead.commodityHauled || 'EMPTY'}"`, hasCommodity ? 'success' : 'error');
+
+                    if (hasState && hasYears && hasCommodity) {
+                        log('🎉 SUCCESS: Recursion fix worked! All DOT data populated!', 'success');
+                        log('💡 The lead profile should now show these fields with green backgrounds', 'info');
+                    } else if (hasState || hasYears || hasCommodity) {
+                        log('⚠️ PARTIAL: Some DOT data populated, but not all', 'error');
+                    } else {
+                        log('❌ FAILURE: No DOT data was populated', 'error');
+                        log('💡 Trying manual trigger as backup...', '');
+
+                        // Manual backup trigger
+                        if (window.manualDOTLookupTrigger) {
+                            window.manualDOTLookupTrigger('150420', '3833739')
+                                .then(() => {
+                                    setTimeout(() => {
+                                        const finalLeads = JSON.parse(localStorage.getItem('insurance_leads') || '[]');
+                                        const finalLead = finalLeads.find(lead => lead.id === '150420');
+
+                                        if (finalLead && finalLead.state) {
+                                            log('✅ Manual trigger worked as backup!', 'success');
+                                        } else {
+                                            log('❌ Even manual trigger failed', 'error');
+                                        }
+                                    }, 2000);
+                                })
+                                .catch(error => {
+                                    log(`❌ Manual trigger error: ${error.message}`, 'error');
+                                });
+                        }
+                    }
+                } else {
+                    log('❌ Test lead not found in localStorage', 'error');
+                }
+            }, 5000);
+        }
+
+        // Status check on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('🔧 Checking auto-hook status...', '');
+
+                if (window.debugDOTLookupHook) {
+                    log('✅ debugDOTLookupHook available', 'success');
+                } else {
+                    log('❌ debugDOTLookupHook NOT available', 'error');
+                }
+
+                if (window.manualDOTLookupTrigger) {
+                    log('✅ manualDOTLookupTrigger available', 'success');
+                } else {
+                    log('❌ manualDOTLookupTrigger NOT available', 'error');
+                }
+
+                // Check if localStorage is hooked
+                const setItemStr = localStorage.setItem.toString();
+                if (setItemStr.includes('insurance_leads') && setItemStr.includes('dotLookupInProgress')) {
+                    log('✅ localStorage hooked with recursion protection', 'success');
+                } else if (setItemStr.includes('insurance_leads')) {
+                    log('⚠️ localStorage hooked but may not have recursion protection', 'error');
+                } else {
+                    log('❌ localStorage NOT hooked', 'error');
+                }
+
+                log('🚀 Ready to test. Click button to run recursion fix test.', 'info');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
